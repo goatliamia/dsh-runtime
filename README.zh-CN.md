@@ -147,6 +147,20 @@ Progress 本身不是另一份状态。
 
 Runtime 不需要不断播报“现在还是这样”。
 
+### 子代编排（Child orchestration）
+
+父 agent 把活派给后台子代。runtime 已经知道**发生了什么**——子代开始、结束、释放 ownership——所以编排层不需要去问。
+
+```text
+spawn  ->  wait  ->  query（读子代自己的轨迹）  ->  模型判断这意味着什么
+```
+
+- **wait** 消费终局事实（`subagent/end`），而不是状态：`idle` 不等于“结束”；子代静默但仍持有活孙代时是 *waiting*，不是完成。
+- **query** 在子代结算后，从它自己的持久会话里重新取回到底发生过什么。
+- 模型不轮询、看不到 runtime 的私有 residency 状态，也不会被塞一个编造的“结果”——子代产出了什么是判断，不是 harness 能拥有的确定事实。
+
+实现为 `ctx.childOrchestration`（`wait` / `waitAll` / `residency`），见 `dsh-runtime-orchestration`；语义冻结在 [`docs/20-child-orchestration-semantic-contract.md`](docs/20-child-orchestration-semantic-contract.md)，实测见 [`experiments/async-lifecycle/`](experiments/async-lifecycle/)。
+
 ### Continuation（事前）
 
 当事实与契约把下一步压缩到唯一确定动作时，Runtime 直接执行——走正常的权限 / 守卫 / 取消边界——模型只消化已经发生的结果。

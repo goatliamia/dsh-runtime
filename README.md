@@ -148,6 +148,27 @@ Tell the model only when a change worth noticing actually appears.
 
 Runtime does not need to keep announcing "still the same as before".
 
+### Child orchestration
+
+Background children are how a parent agent delegates work. The runtime already knows *what
+happened* — a child started, settled, and released its ownership — so the orchestrator never has
+to ask.
+
+```text
+spawn  ->  wait  ->  query the child's own trajectory  ->  the model decides what it means
+```
+
+- **wait** consumes the terminal fact (`subagent/end`), never a status: `idle` is not "finished",
+  and a child that is quiescent while it still owns a live child is *waiting*, not done.
+- **query** re-reads what actually happened from the child's own durable session, after it settled.
+- the model never polls, never sees the runtime's private residency state, and is never handed a
+  made-up "result": what a child produced is a judgement, not a fact the harness can own.
+
+Ships as `ctx.childOrchestration` (`wait` / `waitAll` / `residency`) in `dsh-runtime-orchestration`.
+Semantics are frozen in
+[`docs/20-child-orchestration-semantic-contract.md`](docs/20-child-orchestration-semantic-contract.md)
+and measured in [`experiments/async-lifecycle/`](experiments/async-lifecycle/).
+
 ### Continuation (Pre)
 
 When the facts and a declared contract compress the next step to exactly one deterministic action, the Runtime executes it directly — through the normal permission / guard / cancellation boundary — and the model only digests what already happened.
