@@ -1,0 +1,4 @@
+You are a restart probe in a fresh process. Do EXACTLY this and nothing else.
+
+1. Call the job_list tool ONCE.
+2. Report its raw output verbatim in your final message, then end your turn with the single word GAMMA.

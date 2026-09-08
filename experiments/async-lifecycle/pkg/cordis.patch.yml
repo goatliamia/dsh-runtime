@@ -1,0 +1,10 @@
+# Spike bundle: an evidence fixture (root-scope observers) plus a direct app
+# driver that holds the process open after the task turn, so platform-native
+# async settlement (subagent/job) can be observed instead of racing process exit.
+
+- insert:
+    - id: async-spike-fixture
+      name: dsh-async-spike/fixture
+
+    - id: async-spike-app
+      name: dsh-async-spike

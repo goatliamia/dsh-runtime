@@ -1,0 +1,8 @@
+You are a lifecycle probe. Do EXACTLY this, in this order, and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "Run this PowerShell command and wait for it to finish: Start-Sleep -Seconds 20 ; then reply with exactly the word PONG and nothing else."
+   - description: "lifecycle probe child"
+   - run_in_background: true
+2. Do NOT call list_agents, send_message, or any wait/check/poll tool.
+3. Immediately end your turn. Your final message must be exactly: ALPHA

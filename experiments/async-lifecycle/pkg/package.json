@@ -1,0 +1,18 @@
+{
+  "name": "dsh-async-spike",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runtime-line spike: async Execution lifecycle ownership (subagent/job) evidence probe.",
+  "type": "module",
+  "main": "./lib/app.js",
+  "exports": {
+    ".": "./lib/app.js",
+    "./fixture": "./lib/fixture.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

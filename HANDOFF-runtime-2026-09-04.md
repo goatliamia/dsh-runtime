@@ -29,27 +29,30 @@ npm 仍 `0.1.2-rc.1`。变更摘要：Session format v2（v0/v1 经不可变 gen
 
 > 异步 Job / Subagent 生命周期能否由 Runtime 持有并在完成时反应，而不是 Agent 自己 wait/check/poll。
 
-**判决（源码取证，勿重查）**：
+**判决（源码取证 + 2026-09-04 spike 实证，勿重查）**：
 
 | 场景 | 判决 | 依据 |
 |---|---|---|
-| Subagent | **B + C** | 平台原生事件源生命周期（start/end + durable run rows），父免轮询（平台自动 resume）；插件可 `ctx.on('subagent/end')` fold |
-| Background job | **C-（差一格）** | wakeup notice = 合法 user-role 免轮询；但 job 无第三方公开事件对 |
-| 共有持久化 | **D（单缺口）** | Runtime 自己的派生 fact 跨 restart 无受契约的 runtime-owned state 通道（= v2 验收④） |
+| Subagent | **B + C（已实证）** | 平台原生事件源生命周期（start/end + durable run rows），父免轮询（平台自动 resume）；插件可 `ctx.on('subagent/end')` fold（unscoped 根作用域与父 agent 作用域均实测收到） |
+| Background job | **C（已实证；观察面成立、持久化仍缺）** | wakeup notice = 合法 user-role 免轮询；且 `ctx.jobs.onJobDone` / `onJobsChanged` 是公开 effect-scoped 服务级监听器，第三方可 fold。缺口 = 无 Cordis 事件对（`job/start|end`）+ 实现进程本地 |
+| 共有持久化 | **D（已实证）** | job 记录不落盘、跨 restart 消失；Runtime 自己的派生 fact 跨 restart 无受契约的 runtime-owned state 通道（= v2 验收④） |
 
-明确排除 A（不是隐藏 tool call）。核心缺失精确清单：① job 公开事件对（job/start|end）② job 跨 restart 持久化语义（待实证）③ runtime-owned state 通道。**不需要**任何 synthetic assistant 通道。
+> 实证详见 `docs/status/async-execution-lifecycle-spike-2026-09-04.md`，原始 artifact 在 `experiments/async-lifecycle/`（三格全部用合法形态跑通，无 synthetic assistant）。
+
+明确排除 A（不是隐藏 tool call）。核心缺失精确清单：① job 公开**事件**对（job/start|end；现状只有服务级回调）② job 跨 restart 持久化语义（已实证：无）③ runtime-owned state 通道。**不需要**任何 synthetic assistant 通道。
 
 架构不变量：`真实执行 → Runtime Event → Runtime State → Runtime Reaction →（必要时）合法 continuation`；"事实已发生"与"是否值得唤醒模型"两个决定分离。
 
-### 验证 spike（下一对话第一件事，隔离 home，纯 C 路线）
+### 验证 spike（2026-09-04 已闭环，隔离 home，纯 C 路线）
 
 ```text
 ① 父作用域插件 ctx.on('subagent/end') → fold settlement → completion fact
-   → 验证：无父轮询、无伪造 assistant
+   → 已验证：unscoped 根 + 父 agent 作用域均收到 start/end 成对事件；无父轮询、无伪造 assistant
 ② 一次 spawn 后父全程不 wait/check → 平台是否自动 resume（continuable 模式）
+   → 已验证：父回合 idle 后平台自行 followup/steer 投递 settlement notice（user-role）
 ③ job：启动后不 wait，观察 wakeup notice 经 agent/inbox/claimed 到达
-   → 实证：host 重启后 job 状态是否还在（回答 job 持久化）
-输出：spike 结论回填本文件的判决表（B/C- 是否成立）
+   → 已验证；host 重启后 job 状态不存（无落盘记录 + 新进程 job_list 为空）
+输出：见 docs/status/async-execution-lifecycle-spike-2026-09-04.md（判决表已回填）
 ```
 
 ## 五、环境纪律（学费）
@@ -61,7 +64,7 @@ npm 仍 `0.1.2-rc.1`。变更摘要：Session format v2（v0/v1 经不可变 gen
 
 ## 六、待办
 
-1. **异步 lifecycle spike ①-③**（隔离 home，结论回填第四节）
+1. ~~**异步 lifecycle spike ①-③**~~ ✅ 2026-09-04 闭环（判决表已回填，证据 `docs/status/async-execution-lifecycle-spike-2026-09-04.md` + `experiments/async-lifecycle/`）
 2. 等 v2 → 验收①-⑧ → Line B（validator patch + doctor 工具，v2 后动）
 3. 坏会话等 v2 迁移判定，不动
 4. 仓库名/可见性（问用户一次）

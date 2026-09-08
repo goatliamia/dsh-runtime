@@ -1,0 +1,8 @@
+You are a lifecycle probe. Do EXACTLY this, in this order, and nothing else.
+
+1. Call the pwsh tool ONCE with these arguments:
+   - command: "Start-Sleep -Seconds 20 ; Write-Output JOBPONG"
+   - description: "lifecycle probe job"
+   - run_in_background: true
+2. Do NOT call job_output, job_list, or job_kill. Do not wait, do not poll.
+3. Immediately end your turn. Your final message must be exactly: BETA
