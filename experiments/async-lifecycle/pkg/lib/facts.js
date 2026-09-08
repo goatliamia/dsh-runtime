@@ -11,17 +11,64 @@
 const starts = new Map()
 const settlements = new Map()
 const waiters = new Map()
+const statuses = new Map()
+const derived = new Map()
+const derivedWatchers = new Set()
+
+/**
+ * Derive a third-party residency state from OFFICIAL facts only:
+ *   settled  - the terminal edge was observed
+ *   running  - the agent reports running
+ *   waiting  - quiescent but still owns a live child (the manager's private
+ *              `waiting`, reconstructed without any private access)
+ *   idle     - quiescent with no live child (parked between turns)
+ * @param sessionId - the agent/session to classify.
+ * @returns one of the four labels.
+ */
+export function stateOf(sessionId) {
+  if (settlements.has(sessionId)) return 'settled'
+  if (statuses.get(sessionId) === 'running') return 'running'
+  const owns = childrenOf(sessionId).some((childId) => !settlements.has(childId))
+  return owns ? 'waiting' : 'idle'
+}
+
+/** Recompute one agent's derived state and notify watchers on change. */
+export function refreshDerived(sessionId) {
+  if (typeof sessionId !== 'string') return
+  const next = stateOf(sessionId)
+  if (derived.get(sessionId) === next) return
+  derived.set(sessionId, next)
+  for (const watcher of derivedWatchers) watcher(sessionId, next)
+}
+
+/** Subscribe to derived-state changes. */
+export function watchDerived(callback) {
+  derivedWatchers.add(callback)
+  return () => derivedWatchers.delete(callback)
+}
+
+/** Feed one observed agent status into the derivation. */
+export function recordStatus(sessionId, status) {
+  if (typeof sessionId !== 'string' || typeof status !== 'string') return
+  statuses.set(sessionId, status)
+  refreshDerived(sessionId)
+}
 
 /** One delegation edge as observed from the delegating parent's own scope. */
 export function recordStart(childId, parentId, provider) {
   if (typeof childId !== 'string') return
   starts.set(childId, { parentId, provider, at: Date.now() })
+  refreshDerived(childId)
+  refreshDerived(parentId)
 }
 
 /** Record one terminal edge. Idempotent: first terminal wins, like the platform. */
 export function recordEnd(childId, info) {
   if (typeof childId !== 'string') return
   if (!settlements.has(childId)) settlements.set(childId, { at: Date.now(), ...info })
+  const edge = starts.get(childId)
+  refreshDerived(childId)
+  if (edge !== undefined) refreshDerived(edge.parentId)
   const pending = waiters.get(childId)
   if (pending === undefined) return
   waiters.delete(childId)

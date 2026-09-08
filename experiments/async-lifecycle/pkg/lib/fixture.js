@@ -7,7 +7,7 @@
 // fold a settlement into a Runtime-owned completion fact.
 
 import { record, sourceOf, sessionIdOf, state, textOf } from './state.js'
-import { recordEnd, recordStart } from './facts.js'
+import { recordEnd, recordStart, recordStatus, watchDerived } from './facts.js'
 
 export const name = 'async-spike-fixture'
 export const inject = ['jobs']
@@ -19,6 +19,11 @@ export function apply(ctx) {
     pid: process.pid,
     jobsVisibleToUnscopedCaller: jobs.list().length,
   })
+
+  // Phase 3: the residency state a THIRD PARTY can derive from official facts.
+  ctx.effect(() => watchDerived((sessionId, derivedState) => {
+    record('derived/state', { sessionId, state: derivedState })
+  }))
 
   ctx.on('agent/created', ({ agent }) => {
     const sessionId = sessionIdOf(agent)
@@ -56,7 +61,9 @@ export function apply(ctx) {
   })
 
   ctx.on('agent/status', ({ agent, status }) => {
-    record('agent/status', { sessionId: sessionIdOf(agent), status })
+    const sessionId = sessionIdOf(agent)
+    record('agent/status', { sessionId, status })
+    recordStatus(sessionId, status)
   })
 
   ctx.on('agent/inbox/inserted', ({ agent, message }) => {
