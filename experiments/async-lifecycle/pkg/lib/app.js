@@ -22,6 +22,50 @@ function holdMs() {
   return Number.isFinite(raw) && raw > 0 ? raw : 90000
 }
 
+const clip = (text, max) => {
+  const one = String(text ?? '').replace(/\s+/g, ' ').trim()
+  return one.length > max ? `${one.slice(0, max)}...` : one
+}
+
+/** Fold one child's own trajectory into the scalar facts a digest needs. */
+function summarizeTrajectory(events) {
+  let turns = 0
+  let toolCalls = 0
+  let errors = 0
+  let final = ''
+  let report = ''
+  // Collaboration text travels inside a send_message TOOL CALL, not a text
+  // block, so extraction must read tool-call arguments too (same rule the
+  // trajectory-query plugin's textOf applies).
+  const blocksText = (blocks) => {
+    if (!Array.isArray(blocks)) return ''
+    let out = ''
+    for (const block of blocks) {
+      if (block === null || typeof block !== 'object') continue
+      if (block.type === 'text' && typeof block.text === 'string') out += `${block.text}\n`
+      else if (block.type === 'tool-call') out += `${block.name ?? ''} ${typeof block.arguments === 'string' ? block.arguments : JSON.stringify(block.arguments)}\n`
+      else if (block.type === 'tool-result') out += blocksText(block.content)
+    }
+    return out
+  }
+  for (const event of events ?? []) {
+    if (event.type === 'turn/start') turns += 1
+    else if (event.type === 'tool/call') toolCalls += 1
+    else if (event.type === 'tool/result' && event.data?.error !== undefined) errors += 1
+    else if (event.type === 'assistant/message') {
+      const blocks = event.data?.message?.content
+      const text = blocksText(blocks)
+      if (text === '') continue
+      // The child's closing line is its plain text; the collaboration message
+      // it chose to send is the send_message tool call.
+      const plain = Array.isArray(blocks) ? blocks.filter((b) => b?.type === 'text').map((b) => b.text).join('').trim() : ''
+      if (plain !== '') final = plain
+      if (text.includes('send_message')) report = text
+    }
+  }
+  return { turns, toolCalls, errors, final: clip(final, 160), report: clip(report, 160) }
+}
+
 /**
  * Why the hold window closed, for the evidence trail.
  * @param turnStarts - parent turn/start count observed so far.
@@ -121,6 +165,64 @@ async function run(ctx, io) {
       await sleep(tail)
       record('orch/tail-end', { facts: factSnapshot() })
     }
+  }
+
+  // End-to-end demo: the ORCHESTRATOR (this driver, not the model) waits for
+  // every child, queries each settled child's own trajectory through the
+  // official sessionQuery service, and hands the model one digest. The model
+  // never sees `waiting`, never polls, and never reads a lifecycle event.
+  if (process.env.SPIKE_DEMO === 'e2e') {
+    const subagents = ctx.get('subagents')
+    const query = ctx.get('sessionQuery')
+    const children = childrenOf(parentSessionId)
+    record('demo/children', { count: children.length, ids: children.map((id) => id.slice(0, 8)) })
+
+    const outcomes = []
+    for (const childId of children) {
+      let fact = await awaitSettlement(childId, 30000)
+      if (fact.outcome === 'timeout' && subagents !== undefined) {
+        record('demo/interrupt', { childId: childId.slice(0, 8) })
+        try {
+          subagents.interrupt(childId, { kind: 'ancestor', agent })
+        } catch (error) {
+          record('demo/interrupt-error', { message: String(error?.message ?? error) })
+        }
+        fact = await awaitSettlement(childId, 20000)
+      }
+      outcomes.push({ childId, fact })
+      record('demo/settled', {
+        childId: childId.slice(0, 8),
+        outcome: fact.outcome ?? 'settled',
+        stopReason: fact.stopReason,
+      })
+    }
+
+    const lines = ["CHILD DIGEST - one line per child, read from that child's own session trajectory after its execution finished."]
+    for (const { childId, fact } of outcomes) {
+      let summary = { turns: 0, toolCalls: 0, errors: 0, final: '', report: '' }
+      if (query !== undefined) {
+        try {
+          const snapshot = await query.readSession(childId)
+          summary = summarizeTrajectory(snapshot.events)
+        } catch (error) {
+          record('demo/query-error', { childId: childId.slice(0, 8), message: String(error?.message ?? error) })
+        }
+      }
+      record('demo/digest-line', {
+        childId: childId.slice(0, 8),
+        stop: fact.stopReason ?? fact.outcome,
+        ...summary,
+      })
+      lines.push(`- child ${childId.slice(0, 8)}: stop=${fact.stopReason ?? fact.outcome ?? 'unknown'} turns=${summary.turns} toolCalls=${summary.toolCalls} errors=${summary.errors} final="${summary.final}" collaboration="${summary.report}"`)
+    }
+    const digest = `${lines.join('\n')}\n\nSynthesize: which children finished, and what each reported. End with SYNTHESIZED.`
+    record('demo/digest', { text: digest })
+    agent.followup(createUserMessage({
+      content: [{ type: 'text', text: digest }],
+      source: { kind: 'plugin', plugin: 'async-spike-demo', form: 'notice' },
+    }))
+    await agent.whenIdle()
+    record('demo/synth-done', { status: agent.status, parentTurnStarts: state.parentTurnStarts })
   }
 
   // Hold the process open. This is the ONLY thing the driver does after the

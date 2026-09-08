@@ -8,6 +8,8 @@ Full findings:
 [`docs/status/child-lifecycle-ownership-spike-2026-09-04.md`](../../docs/status/child-lifecycle-ownership-spike-2026-09-04.md) (v2: ownership tree, waiting semantics, result propagation),
 [`docs/status/child-orchestration-semantics-phase1-2026-09-04.md`](../../docs/status/child-orchestration-semantics-phase1-2026-09-04.md) (phase 1: wait as a terminal-fact predicate),
 [`docs/status/child-orchestration-semantics-phase2-2026-09-08.md`](../../docs/status/child-orchestration-semantics-phase2-2026-09-08.md) (phase 2: report vs settlement),
+[`docs/status/child-orchestration-semantics-phase3-2026-09-09.md`](../../docs/status/child-orchestration-semantics-phase3-2026-09-09.md) (phase 3: waiting is derivable),
+[`docs/status/child-orchestration-e2e-2026-09-09.md`](../../docs/status/child-orchestration-e2e-2026-09-09.md) (end-to-end demo),
 [`docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md`](../../docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md) (0.1.3-alpha.2 control re-run).
 This directory is the re-runnable harness plus the desensitized raw artifacts.
 
@@ -15,18 +17,22 @@ This directory is the re-runnable harness plus the desensitized raw artifacts.
 pkg/       the spike bundle (one package, two loader rows)
   lib/fixture.js   observer: unscoped root scope + the delegating agent's own scope
   lib/fixture.js   also folds ctx.jobs.onJobDone / onJobsChanged (public service listeners)
-  lib/facts.js     Runtime-owned settlement facts + the event-driven waiter
-  lib/app.js       direct driver: runs ONE task turn, then holds the process open
+  lib/facts.js     Runtime-owned settlement facts + the event-driven waiter + residency derivation
+  lib/app.js       direct driver: runs ONE task turn, then holds; also the e2e orchestrator
   lib/state.js     shared leaf-field-only evidence recorder
 tasks/       the three v1 probe prompts (ASCII)
 tasks-v2/    the five child-lifecycle case prompts (ASCII)
 tasks-orch/  the four phase-1 wait case prompts (ASCII)
 tasks-result/ the four phase-2 result case prompts (ASCII)
+tasks-residency/ the three phase-3 residency prompts (ASCII)
+tasks-e2e/   the end-to-end demo prompt (ASCII)
 harness/     run-*.ps1 · analyze-*.mjs · verify-semantics.mjs · sync-to-repo.mjs
 results/       v1: a|b|c .jsonl + driver log + home file snapshots (session ids aliased)
 results-v2/    v2: case1..5 .jsonl + analysis.txt (causal timeline, roles derived from observed edges)
 results-orch/  phase 1: a1..a4 .jsonl (wait outcomes, child status transitions)
 results-result/ phase 2: r1..r4 .jsonl (parent-visible arrival order)
+results-residency/ phase 3: w1..w3 .jsonl (derived residency timeline)
+results-e2e/   end-to-end demo: e2e.jsonl (spawn x4 -> wait-all -> query -> digest -> synthesis)
 verification.txt  the 21 pinned semantics checked on rc.1 and on 0.1.3-alpha.2
 ```
 

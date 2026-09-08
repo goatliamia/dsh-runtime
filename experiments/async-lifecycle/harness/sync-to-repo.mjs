@@ -95,6 +95,9 @@ for (const name of ['task-r1.txt', 'task-r2.txt', 'task-r3.txt', 'task-r4.txt'])
 mkdirSync(join(DST, 'tasks-residency'), { recursive: true })
 for (const name of ['task-w1.txt', 'task-w2.txt', 'task-w3.txt']) copySanitized(join(SRC, name), join(DST, 'tasks-residency', name))
 
+mkdirSync(join(DST, 'tasks-e2e'), { recursive: true })
+for (const name of ['task-e2e.txt']) copySanitized(join(SRC, name), join(DST, 'tasks-e2e', name))
+
 mkdirSync(join(DST, 'harness'), { recursive: true })
 for (const name of [
   'run-spike.ps1',
@@ -108,6 +111,7 @@ for (const name of [
   'analyze-result.mjs',
   'run-residency-par.ps1',
   'analyze-residency.mjs',
+  'run-e2e.ps1',
   'verify-semantics.mjs',
 ]) {
   copySanitized(join(SRC, name), join(DST, 'harness', name))
@@ -121,6 +125,7 @@ copyResults(join(SRC, 'results-v2'), join(DST, 'results-v2'))
 copyResults(join(SRC, 'results-orch'), join(DST, 'results-orch'))
 copyResults(join(SRC, 'results-result'), join(DST, 'results-result'))
 copyResults(join(SRC, 'results-residency'), join(DST, 'results-residency'))
+copyResults(join(SRC, 'results-e2e'), join(DST, 'results-e2e'))
 copySanitized(join(SRC, 'verification.txt'), join(DST, 'verification.txt'))
 
 console.log(`materialized ${aliases.size} session aliases into ${DST}`)

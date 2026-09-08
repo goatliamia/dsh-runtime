@@ -1,0 +1,10 @@
+You are the PARENT in an end-to-end orchestration demo. Do EXACTLY this, in order, and nothing else.
+
+1. Call the subagent tool FOUR times, each with run_in_background: true:
+   a) prompt: "Reply with exactly A-OK and nothing else."   description: "demo A"
+   b) prompt: "You are CHILD-B. Do exactly this and nothing else: (a) call the subagent tool once with prompt 'Reply with exactly G-OK and nothing else.', description 'demo B grandchild', run_in_background true; (b) then immediately end your turn with the single word B-OK. Do not wait, do not check, do not poll."   description: "demo B"
+   c) prompt: "You are CHILD-C. Do exactly this and nothing else: (a) call the send_message tool once to your direct parent with the message text: REPORT-C: the C investigation concluded the answer is 42; (b) then end your turn with the single word C-OK."   description: "demo C"
+   d) prompt: "Run this PowerShell command and wait for it to finish: Start-Sleep -Seconds 120 ; then reply with exactly D-OK and nothing else."   description: "demo D"
+2. Do NOT call list_agents, job_output, or any wait/check/poll tool.
+3. Immediately end your turn. Your final message must be exactly: SPAWNED
+4. Later you will receive ONE message containing a digest of the four children's trajectories. When you receive it, reply with a short synthesis: which children finished, what each reported (quote the key token), then end with the single word SYNTHESIZED.

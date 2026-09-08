@@ -74,8 +74,10 @@
 5. ~~**升级 0.1.3-alpha.2 + 影响核对**~~ ✅ 2026-09-08（`docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md`；9 case 重跑 21/21，runtime 插件无影响）
 6. ~~**Child Result provenance 分层 + 轨迹插件可用性**~~ ✅ 2026-09-08（`docs/status/child-result-provenance-and-trajectory-tooling-2026-09-08.md`；结论：**无 Result primitive**，collect 不该由 runtime 定义；`dsh-analysis-view` 对已结算会话在 v2 上失效，根因 `sessionPersistence.inspect` 被 SessionHandle 取代）
 7. ~~**Child Orchestration Phase 3（waiting 归属，3 case）**~~ ✅ 2026-09-09 闭环（`docs/status/child-orchestration-semantics-phase3-2026-09-09.md`；结论：**waiting 是 orchestration-facing 且可由官方事实自行推导**，无需新 primitive、无需 waiting notice；8/8）
-8. v2 验收②（坏会话迁移命运）——需真跑，按指示暂不动；③④⑦静态已答（仍拒绝 / 仍无 / 不变）
-9. 用户侧待修（不属本线）：`dsh-analysis-view` 兜底改用 `sessionPersistence.open()` + `SessionHandle.read()`
-10. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
+8. ~~**Child Orchestration End-to-End Demo**~~ ✅ 2026-09-09 通过（`docs/status/child-orchestration-e2e-2026-09-09.md`；spawn×4 → 编排层 wait-all + `sessionQuery.readSession` 查轨迹 → 一行 digest 注入父 → 父合成；父全程只有 4 次 `subagent` 调用、零轮询。两个发现：`wait` 清干净的是编排层而非模型收件箱；collaboration 正文在 tool-call 参数里）
+9. ~~**`dsh-trajectory-query` 可用性验证**~~ ✅ 2026-09-09（原样加载其 host 插件，对**已结算**子代实测 `trajectory_window`/`find` 均可用；与 `dsh-analysis-view` 互补，后者对已结算会话在 v2 上仍 500）
+10. v2 验收②（坏会话迁移命运）——需真跑，按指示暂不动；③④⑦静态已答（仍拒绝 / 仍无 / 不变）
+11. 用户侧待修（不属本线）：`dsh-analysis-view` 兜底改用 `sessionPersistence.open()` + `SessionHandle.read()`
+12. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
 
-> **子代线分层已定稿**（Phase 1-3 + provenance）：Runtime 发布事实（`subagent/start|end` + ownership）→ 编排层推导 residency / `wait` / `query(child trajectory)` → 模型决定"下一步"与"什么算产出"。官方仍缺：Result primitive、job 事件对/持久化、runtime-owned state。
+> **子代线分层已定稿**（Phase 1-3 + provenance + e2e）：Runtime 发布事实（`subagent/start|end` + ownership + 合法 notice/wake）→ 编排层推导 residency / `wait` / `query(child trajectory)` → 模型决定"下一步"与"什么算产出"。最小 primitive 集 = `spawn / wait / query trajectory`。官方仍缺：Result primitive、job 事件对/持久化、runtime-owned state。
