@@ -3,7 +3,7 @@
 > 新对话接手前先读：本文件 → `README.md`（定位）→ `docs/bugs/005-session-zstd-frame-repair-boot-failure.md`（帧铁律）→ `docs/status/dsh-next-update-v2-2026-09-04.md`（官方更新验收，勿重调研）→ GitHub issue #1（Pre 通道禁条）。
 
 - 仓库：`D:\projects\runtime\dsh-runtime`，master 基线 = `355acb5`（+bug005+更新验收清单）
-- GitHub：名 `dsh-runtime-react`，**当前 PUBLIC**——改名/可见性待用户拍板，只问一次
+- GitHub：名 `dsh-runtime`（2026-09-09 由 `dsh-runtime-react` 改名，旧名自动重定向），**PUBLIC**
 - 工作区有另一对话遗留的 Pre 线文件（untracked：`core/runtime-seam/lib/pre-continuation.mjs` 等）——**禁止合并/推送**（issue #1）
 - 另一条线 visual-html（vhtml）在 `goatliamia/visual-html-agent-editor`，勿在本线处理
 
@@ -79,6 +79,7 @@
 10. v2 验收②（坏会话迁移命运）——需真跑，按指示暂不动；③④⑦静态已答（仍拒绝 / 仍无 / 不变）
 11. 用户侧待修（不属本线）：`dsh-analysis-view` 兜底改用 `sessionPersistence.open()` + `SessionHandle.read()`
 12. ~~**收档产物：Child Orchestration Semantic Contract**~~ ✅ 2026-09-09（`docs/20-child-orchestration-semantic-contract.md`；五段：Problem / Observed DSH facts / Layer boundary / Non-goals / Minimal reference flow）
-13. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
+13. ~~仓库名~~ ✅ 2026-09-09：`dsh-runtime-react` → **`dsh-runtime`**（PUBLIC，旧名重定向），并修正各 package.json 的 repository 字段
+14. `core/runtime-orchestration`：契约的最小实现（wait/waitAll/residency），已装进 live web profile
 
 > **子代线分层已定稿**（Phase 1-3 + provenance + e2e）：Runtime 发布事实（`subagent/start|end` + ownership + 合法 notice/wake）→ 编排层推导 residency / `wait` / `query(child trajectory)` → 模型决定"下一步"与"什么算产出"。最小 primitive 集 = `spawn / wait / query trajectory`，契约见 `docs/20-child-orchestration-semantic-contract.md`。官方仍缺：Result primitive、job 事件对/持久化、runtime-owned state。

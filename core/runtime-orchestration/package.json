@@ -1,11 +1,12 @@
 {
-  "name": "dsh-runtime-progress-legacy",
+  "name": "dsh-runtime-orchestration",
   "version": "0.1.0",
-  "description": "LEGACY reference plugin (superseded 2026-09-02): seam-based shell-lock reaction. The package name dsh-runtime-progress now belongs to core/runtime-progress (the Progress fact layer); this reference stays only as a seam-usage example.",
+  "description": "Thin child-orchestration layer for DSH: wait on a child's terminal fact, derive its residency, wait for many. Consumes official facts only (subagent/start|end + agent/status); no polling, no new events, no core patch.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
+    "./core": "./lib/core.mjs",
     "./package.json": "./package.json"
   },
   "files": [
@@ -17,19 +18,16 @@
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
-    "runtime"
+    "runtime",
+    "subagent"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/goatliamia/dsh-runtime.git",
-    "directory": "plugins/runtime-progress"
+    "directory": "core/runtime-orchestration"
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "dsh-runtime-seam": "file:../../core/runtime-seam",
-    "@deepseek-ai/schemastery": "^3.18.1"
   },
   "dsh": {
     "bundle": {

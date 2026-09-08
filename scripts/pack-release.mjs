@@ -33,6 +33,10 @@ pack(join(REPO, "core", "runtime-progress"));
 // 1b) seam: pack as-is (registry dep @deepseek-ai/schemastery resolves from npm).
 pack(join(REPO, "core", "runtime-seam"));
 
+// 1c) child orchestration layer: pack as-is (zero dependencies). Deliberately
+//     NOT part of the umbrella bundle: only an orchestration layer consumes it.
+pack(join(REPO, "core", "runtime-orchestration"));
+
 // 2) policies: bundle the progress lib, drop the file: dep.
 for (const pkg of ["runtime-circuit", "runtime-reconcile", "runtime-investigate"]) {
   const src = join(REPO, "core", pkg);
