@@ -78,6 +78,7 @@
 9. ~~**`dsh-trajectory-query` 可用性验证**~~ ✅ 2026-09-09（原样加载其 host 插件，对**已结算**子代实测 `trajectory_window`/`find` 均可用；与 `dsh-analysis-view` 互补，后者对已结算会话在 v2 上仍 500）
 10. v2 验收②（坏会话迁移命运）——需真跑，按指示暂不动；③④⑦静态已答（仍拒绝 / 仍无 / 不变）
 11. 用户侧待修（不属本线）：`dsh-analysis-view` 兜底改用 `sessionPersistence.open()` + `SessionHandle.read()`
-12. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
+12. ~~**收档产物：Child Orchestration Semantic Contract**~~ ✅ 2026-09-09（`docs/20-child-orchestration-semantic-contract.md`；五段：Problem / Observed DSH facts / Layer boundary / Non-goals / Minimal reference flow）
+13. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
 
-> **子代线分层已定稿**（Phase 1-3 + provenance + e2e）：Runtime 发布事实（`subagent/start|end` + ownership + 合法 notice/wake）→ 编排层推导 residency / `wait` / `query(child trajectory)` → 模型决定"下一步"与"什么算产出"。最小 primitive 集 = `spawn / wait / query trajectory`。官方仍缺：Result primitive、job 事件对/持久化、runtime-owned state。
+> **子代线分层已定稿**（Phase 1-3 + provenance + e2e）：Runtime 发布事实（`subagent/start|end` + ownership + 合法 notice/wake）→ 编排层推导 residency / `wait` / `query(child trajectory)` → 模型决定"下一步"与"什么算产出"。最小 primitive 集 = `spawn / wait / query trajectory`，契约见 `docs/20-child-orchestration-semantic-contract.md`。官方仍缺：Result primitive、job 事件对/持久化、runtime-owned state。
