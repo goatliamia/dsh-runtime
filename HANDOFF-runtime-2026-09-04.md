@@ -19,11 +19,12 @@
 
 - `9d9b289a`（坏事件 seq 643817/646714/653169/654711）+ `8f5c713d`（372908）：已恢复原始日志（.bak 在会话目录），打开仍被 validator 拒。标本 = v2 迁移回归夹具。唯一安全手术 = 帧边界保持法（bug 005）；严禁整体重压。
 
-## 三、官方下一更新（未发布，影响大）
+## 三、官方下一更新（**已发布在 alpha 通道，2026-09-08 已升级**）
 
-npm 仍 `0.1.2-rc.1`。变更摘要：Session format v2（v0/v1 经不可变 generation 迁移）、SessionHandle+会话锁（破坏性）、续传分片空值修复（坏会话族）、历史加载性能回退。实验性 Web Preview/Inspector 属 html 线。
-- **触发信号**：`npm view @deepseek-ai/dsh version` > `0.1.2-rc.1`
-- **发布后照 `docs/status/dsh-next-update-v2-2026-09-04.md` ①-⑧ 执行**（v2 types / 坏会话迁移命运 / v2 validator 是否接受 runtime-continuation / 有无 runtime-owned state / 帧格式 / Line B 行号重定位）
+`latest`/`next` 仍是 `0.1.2-rc.1`，但 **`alpha` = `0.1.3-alpha.2`（09-07 发布）**，用户已手动升级 live 安装。
+- 变更摘要：Session format v2（`SESSION_FORMAT_VERSION 0 → 2`，v0/v1 经不可变 generation 迁移）、SessionHandle + 内核写锁/跨进程会话锁（破坏性）、`assistant/attempt` 事件、`assistant/message.stream`、`team/*` 事件族。
+- **升级影响核对已完成**：`docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md`（9 个 case 在新版重跑 **21/21** 稳定语义成立；runtime 插件静态 API + 隔离挂载运行均通过；唯一实质变化是日志格式）。
+- 未做的验收项：② 坏会话 v2 迁移命运、③ validator 是否接受 `runtime-continuation`（**静态已知：仍拒绝，全包 0 命中**）、④ runtime-owned state（**静态已知：仍无**）、⑦ 帧不变量（**静态已知：不变**）。② 需要真跑，按指示本轮未动。
 
 ## 四、下一方向：异步 Execution lifecycle 所有权（2026-09-04 定题）
 
@@ -69,7 +70,8 @@ npm 仍 `0.1.2-rc.1`。变更摘要：Session format v2（v0/v1 经不可变 gen
 1. ~~**异步 lifecycle spike ①-③**~~ ✅ 2026-09-04 闭环（判决表已回填，证据 `docs/status/async-execution-lifecycle-spike-2026-09-04.md` + `experiments/async-lifecycle/`）
 2. ~~**Child Lifecycle / Ownership spike（5 case）**~~ ✅ 2026-09-04 闭环（`docs/status/child-lifecycle-ownership-spike-2026-09-04.md`）
 3. ~~**Child Orchestration Phase 1（wait，4 case）**~~ ✅ 2026-09-04 闭环（`docs/status/child-orchestration-semantics-phase1-2026-09-04.md`；结论：`subagent/end` 即唯一 terminal predicate，wait 落编排层）
-4. Child Orchestration Phase 2（result：report vs settlement vs final assistant）→ Phase 3（waiting 归属）
-5. 等 v2 → 验收①-⑧ → Line B（validator patch + doctor 工具，v2 后动）
-6. 坏会话等 v2 迁移判定，不动
-7. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
+4. ~~**Child Orchestration Phase 2（result，4 case）**~~ ✅ 2026-09-08 闭环（`docs/status/child-orchestration-semantics-phase2-2026-09-08.md`；结论：result = child-authored relay + settlement stub 两条独立通道，不排序不合并）
+5. ~~**升级 0.1.3-alpha.2 + 影响核对**~~ ✅ 2026-09-08（`docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md`；9 case 重跑 21/21，runtime 插件无影响）
+6. Child Orchestration Phase 3（waiting 是 model-facing 还是 orchestration-facing）
+7. v2 验收②（坏会话迁移命运）——需真跑，按指示暂不动；③④⑦静态已答（仍拒绝 / 仍无 / 不变）
+8. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）

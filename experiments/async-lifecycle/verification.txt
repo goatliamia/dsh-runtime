@@ -1,0 +1,123 @@
+=== SEMANTICS CONTROL: rc.1 baseline ===
+PASS  case1  settlement notice precedes subagent/end  (8456 < 8458)
+PASS  case1  child-authored relay also reaches the parent  (relay@7699)
+PASS  case1  relay and notice carry the same closing text (duplicate)
+PASS  case2  list_agents reports the child [idle]  (list@24611)
+PASS  case2  that idle is BEFORE the child terminal edge  (24611 < 60607)
+PASS  case2  no waiting notice exists
+PASS  case3  two terminal edges observed (grandchild then child)  (n=2)
+PASS  case3  grandchild terminal precedes child terminal  (8315 < 11994)
+PASS  case4  disposed terminal is aborted  (stop=aborted)
+PASS  case4  notice says it was stopped
+PASS  case4  notice did NOT open a new parent turn  (turns=1)
+PASS  case5  parent already answered before the settlement notice  (msgs=4)
+PASS  case5  parent is pulled back after the settlement notice  (turns=3)
+PASS  case5  branch recorded (idle=>new turn / busy=>steered)  (new turn opened)
+PASS  a1     wait resolved via the terminal fact  (via=fact)
+PASS  a1     wait returned at/after the terminal fact  (26960 >= 26959)
+PASS  a2     already-settled resolves immediately  (via=already-settled elapsed=1)
+PASS  a3     wait stayed blocked through the idle window  (idle@5515 waitEnd@36041)
+PASS  a3     wait resolved via the terminal fact  (via=fact)
+PASS  a4     timeout is a distinct outcome  (outcome=timeout)
+PASS  a4     the late fact did not resolve the timed-out wait  (settlements=1)
+
+21/21 pinned semantics hold
+
+=== SEMANTICS CONTROL: 0.1.3-alpha.2 (same 9 cases re-run) ===
+PASS  case1  settlement notice precedes subagent/end  (5778 < 5779)
+PASS  case1  child-authored relay also reaches the parent  (relay@4894)
+PASS  case1  relay and notice carry the same closing text (duplicate)
+PASS  case2  list_agents reports the child [idle]  (list@20964)
+PASS  case2  that idle is BEFORE the child terminal edge  (20964 < 58010)
+PASS  case2  no waiting notice exists
+PASS  case3  two terminal edges observed (grandchild then child)  (n=2)
+PASS  case3  grandchild terminal precedes child terminal  (9653 < 13782)
+PASS  case4  disposed terminal is aborted  (stop=aborted)
+PASS  case4  notice says it was stopped
+PASS  case4  notice did NOT open a new parent turn  (turns=1)
+PASS  case5  parent already answered before the settlement notice  (msgs=4)
+PASS  case5  parent is pulled back after the settlement notice  (turns=2)
+PASS  case5  branch recorded (idle=>new turn / busy=>steered)  (steered into running turn)
+PASS  a1     wait resolved via the terminal fact  (via=fact)
+PASS  a1     wait returned at/after the terminal fact  (25725 >= 25723)
+PASS  a2     already-settled resolves immediately  (via=already-settled elapsed=1)
+PASS  a3     wait stayed blocked through the idle window  (idle@7462 waitEnd@47739)
+PASS  a3     wait resolved via the terminal fact  (via=fact)
+PASS  a4     timeout is a distinct outcome  (outcome=timeout)
+PASS  a4     the late fact did not resolve the timed-out wait  (settlements=1)
+
+21/21 pinned semantics hold
+
+=== PHASE 2 (result) arrival order, alpha ===
+R1
+-- terminal edges --
+-- parent-visible arrival order --
+    1016ms  INBOX user "You are the PARENT in a result-propagation pro..."
+    1020ms  turn/start turn=1
+    1022ms  CLAIM turn=1 user
+    1982ms  ASSISTANT ""
+    2449ms  ASSISTANT "P-DONE"
+   12260ms  INBOX agent-message/relay "Agent session-t sen..."
+   12262ms  turn/start turn=2
+   12263ms  CLAIM turn=2 agent-message/relay
+   12782ms  INBOX subagent-settled/notice "Background subagent 029840ff-1c81-493c-a888-f7..."
+   12820ms  ASSISTANT "ACK"
+   12822ms  CLAIM turn=2 subagent-settled/notice
+   13162ms  ASSISTANT "ACK"
+ORDER: report@12260ms -> settlement-notice@12782ms -> subagent/end@12783ms
+R2
+-- terminal edges --
+-- parent-visible arrival order --
+    1002ms  INBOX user "You are the PARENT in a result-propagation pro..."
+    1006ms  turn/start turn=1
+    1008ms  CLAIM turn=1 user
+    2233ms  ASSISTANT ""
+    3432ms  ASSISTANT ""
+   12306ms  INBOX agent-message/relay "Agent session-w sen..."
+   12989ms  INBOX subagent-settled/notice "Background subagent fc079af6-e89e-4768-b7a5-a2..."
+   34129ms  CLAIM turn=1 agent-message/relay
+   34130ms  CLAIM turn=1 subagent-settled/notice
+   34585ms  ASSISTANT "ACK"
+ORDER: report@12306ms -> settlement-notice@12989ms -> subagent/end@12991ms
+R3
+-- terminal edges --
+-- parent-visible arrival order --
+    1011ms  INBOX user "You are the PARENT in a result-propagation pro..."
+    1015ms  turn/start turn=1
+    1017ms  CLAIM turn=1 user
+    2502ms  ASSISTANT ""
+    3015ms  ASSISTANT "P-DONE"
+   10859ms  INBOX agent-message/relay "Agent session-| sen..."
+   10860ms  turn/start turn=2
+   10861ms  CLAIM turn=2 agent-message/relay
+   11307ms  ASSISTANT "ACK"
+   11339ms  INBOX subagent-settled/notice "Background subagent efd843d3-efbb-4207-bf01-c4..."
+   11341ms  turn/start turn=3
+   11342ms  CLAIM turn=3 subagent-settled/notice
+   11987ms  ASSISTANT "ACK"
+   18796ms  INBOX agent-message/relay "Agent session-z sen..."
+   18798ms  turn/start turn=4
+   18800ms  CLAIM turn=4 agent-message/relay
+   19497ms  ASSISTANT "ACK"
+   19833ms  INBOX subagent-settled/notice "Background subagent e8287680-c12b-483f-b530-e5..."
+   19835ms  turn/start turn=5
+   19836ms  CLAIM turn=5 subagent-settled/notice
+   20297ms  ASSISTANT "ACK"
+ORDER: report@10859ms -> settlement-notice@11339ms -> subagent/end@11345ms
+R4
+-- terminal edges --
+-- parent-visible arrival order --
+     993ms  INBOX user "You are the PARENT in a result-propagation pro..."
+     996ms  turn/start turn=1
+     998ms  CLAIM turn=1 user
+    2146ms  ASSISTANT ""
+    3274ms  ASSISTANT "P-DONE"
+    4260ms  INBOX agent-message/relay "Agent session- sen..."
+    4262ms  turn/start turn=2
+    4264ms  CLAIM turn=2 agent-message/relay
+    4780ms  ASSISTANT "ACK"
+   14708ms  INBOX subagent-settled/notice "Background subagent b72e30ca-acf5-4e77-adf0-e4..."
+   14709ms  turn/start turn=3
+   14711ms  CLAIM turn=3 subagent-settled/notice
+   15142ms  ASSISTANT "ACK"
+ORDER: report@4260ms -> settlement-notice@13907ms -> subagent/end@13908ms

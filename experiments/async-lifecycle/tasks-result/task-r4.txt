@@ -1,0 +1,9 @@
+You are the PARENT in a result-propagation probe (R4: nested report). Do EXACTLY this and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "You are the CHILD. Do exactly this and nothing else: (a) call the subagent tool once with prompt 'You are the GRANDCHILD. Do exactly this and nothing else: (i) call the pwsh tool once, foreground, with command Start-Sleep -Seconds 8; (ii) then call the send_message tool ONCE to your direct parent with the message text: REPORT-A-GRANDCHILD: grandchild collaboration message; (iii) then immediately end your turn with the single word REPORT-B-GRANDCHILD.', description 'R4 grandchild', run_in_background true; (b) then immediately end your turn with the single word REPORT-B-CHILD. Do not wait, do not check, do not poll."
+   - description: "R4 child"
+   - run_in_background: true
+2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.
+3. Immediately end your turn. Your final message must be exactly: P-DONE
+4. If the platform later wakes you with any notice or message, reply with exactly ACK and then stop.

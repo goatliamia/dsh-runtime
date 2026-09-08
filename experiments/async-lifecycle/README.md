@@ -6,7 +6,9 @@ lifecycle and react when work actually settles, instead of the Agent waiting, ch
 Full findings:
 [`docs/status/async-execution-lifecycle-spike-2026-09-04.md`](../../docs/status/async-execution-lifecycle-spike-2026-09-04.md) (v1: settlement + wakeup),
 [`docs/status/child-lifecycle-ownership-spike-2026-09-04.md`](../../docs/status/child-lifecycle-ownership-spike-2026-09-04.md) (v2: ownership tree, waiting semantics, result propagation),
-[`docs/status/child-orchestration-semantics-phase1-2026-09-04.md`](../../docs/status/child-orchestration-semantics-phase1-2026-09-04.md) (phase 1: wait as a terminal-fact predicate).
+[`docs/status/child-orchestration-semantics-phase1-2026-09-04.md`](../../docs/status/child-orchestration-semantics-phase1-2026-09-04.md) (phase 1: wait as a terminal-fact predicate),
+[`docs/status/child-orchestration-semantics-phase2-2026-09-08.md`](../../docs/status/child-orchestration-semantics-phase2-2026-09-08.md) (phase 2: report vs settlement),
+[`docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md`](../../docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md) (0.1.3-alpha.2 control re-run).
 This directory is the re-runnable harness plus the desensitized raw artifacts.
 
 ```text
@@ -16,14 +18,16 @@ pkg/       the spike bundle (one package, two loader rows)
   lib/facts.js     Runtime-owned settlement facts + the event-driven waiter
   lib/app.js       direct driver: runs ONE task turn, then holds the process open
   lib/state.js     shared leaf-field-only evidence recorder
-tasks/     the three v1 probe prompts (ASCII)
-tasks-v2/  the five child-lifecycle case prompts (ASCII)
-tasks-orch/ the four phase-1 wait case prompts (ASCII)
-harness/   run-spike.ps1 · analyze.mjs · run-lifecycle.ps1 · analyze-lifecycle.mjs
-           run-orchestration.ps1 · analyze-orchestration.mjs · sync-to-repo.mjs
-results/   v1: a|b|c .jsonl + driver log + home file snapshots (session ids aliased)
-results-v2/ v2: case1..5 .jsonl + analysis.txt (causal timeline, roles derived from observed edges)
-results-orch/ phase 1: a1..a4 .jsonl (wait outcomes, child status transitions)
+tasks/       the three v1 probe prompts (ASCII)
+tasks-v2/    the five child-lifecycle case prompts (ASCII)
+tasks-orch/  the four phase-1 wait case prompts (ASCII)
+tasks-result/ the four phase-2 result case prompts (ASCII)
+harness/     run-*.ps1 · analyze-*.mjs · verify-semantics.mjs · sync-to-repo.mjs
+results/       v1: a|b|c .jsonl + driver log + home file snapshots (session ids aliased)
+results-v2/    v2: case1..5 .jsonl + analysis.txt (causal timeline, roles derived from observed edges)
+results-orch/  phase 1: a1..a4 .jsonl (wait outcomes, child status transitions)
+results-result/ phase 2: r1..r4 .jsonl (parent-visible arrival order)
+verification.txt  the 21 pinned semantics checked on rc.1 and on 0.1.3-alpha.2
 ```
 
 ## Why the driver is not `dsh --profile headless`

@@ -89,6 +89,9 @@ for (const name of ['task-1.txt', 'task-2.txt', 'task-3.txt', 'task-4.txt', 'tas
 mkdirSync(join(DST, 'tasks-orch'), { recursive: true })
 for (const name of ['task-a1.txt', 'task-a2.txt', 'task-a3.txt', 'task-a4.txt']) copySanitized(join(SRC, name), join(DST, 'tasks-orch', name))
 
+mkdirSync(join(DST, 'tasks-result'), { recursive: true })
+for (const name of ['task-r1.txt', 'task-r2.txt', 'task-r3.txt', 'task-r4.txt']) copySanitized(join(SRC, name), join(DST, 'tasks-result', name))
+
 mkdirSync(join(DST, 'harness'), { recursive: true })
 for (const name of [
   'run-spike.ps1',
@@ -97,15 +100,22 @@ for (const name of [
   'analyze-lifecycle.mjs',
   'run-orchestration.ps1',
   'analyze-orchestration.mjs',
+  'run-result.ps1',
+  'run-result-par.ps1',
+  'analyze-result.mjs',
+  'verify-semantics.mjs',
 ]) {
   copySanitized(join(SRC, name), join(DST, 'harness', name))
 }
 
 // 2) evidence: JSONL artifacts + driver logs. No credentials, no settings, no
-//    session logs.
+//    session logs. (rc.1 baselines live in git history; only the current run
+//    set is materialized.)
 copyResults(join(SRC, 'results'), join(DST, 'results'))
 copyResults(join(SRC, 'results-v2'), join(DST, 'results-v2'))
 copyResults(join(SRC, 'results-orch'), join(DST, 'results-orch'))
+copyResults(join(SRC, 'results-result'), join(DST, 'results-result'))
+copySanitized(join(SRC, 'verification.txt'), join(DST, 'verification.txt'))
 
 console.log(`materialized ${aliases.size} session aliases into ${DST}`)
 for (const [id, alias] of aliases) console.log(`  ${alias} <- ${id.slice(0, 8)}...`)
