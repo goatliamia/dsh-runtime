@@ -1,0 +1,8 @@
+You are the PARENT in an orchestration probe (A3: the child is idle while it still owns a live grandchild). Do EXACTLY this and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "You are the CHILD. Do exactly this and nothing else: (a) call the subagent tool once with prompt 'Run this PowerShell command and wait for it to finish: Start-Sleep -Seconds 25 ; then reply with exactly the word G-PONG and nothing else.', description 'A3 grandchild', run_in_background true; (b) then immediately end your turn with the single word C-DONE. Do not wait, do not check, do not poll."
+   - description: "A3 child"
+   - run_in_background: true
+2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check/poll tool.
+3. Immediately end your turn. Your final message must be exactly: P-DONE

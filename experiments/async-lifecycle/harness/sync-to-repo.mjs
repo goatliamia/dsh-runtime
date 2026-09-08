@@ -9,7 +9,7 @@
  *   node experiments/async-lifecycle/harness/sync-to-repo.mjs
  */
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const SRC = process.env.ASYNC_SPIKE_SRC ?? join(process.env.USERPROFILE ?? process.env.HOME ?? '.', 'Documents', 'async-spike')
@@ -64,10 +64,21 @@ function copySanitized(from, to) {
   return true
 }
 
+/** Copy every text artifact of one results directory. */
+function copyResults(fromDir, toDir) {
+  if (!existsSync(fromDir)) return
+  mkdirSync(toDir, { recursive: true })
+  for (const name of readdirSync(fromDir)) {
+    if (!/\.(jsonl|txt|log)$/.test(name)) continue
+    if (name === 'dump-config.txt') continue
+    copySanitized(join(fromDir, name), join(toDir, name))
+  }
+}
+
 // 1) harness sources, verbatim structure (no node_modules)
 mkdirSync(join(DST, 'pkg', 'lib'), { recursive: true })
 for (const name of ['package.json', 'cordis.patch.yml']) copySanitized(join(SRC, 'pkg', name), join(DST, 'pkg', name))
-for (const name of ['app.js', 'fixture.js', 'state.js']) copySanitized(join(SRC, 'pkg', 'lib', name), join(DST, 'pkg', 'lib', name))
+for (const name of ['app.js', 'fixture.js', 'state.js', 'facts.js']) copySanitized(join(SRC, 'pkg', 'lib', name), join(DST, 'pkg', 'lib', name))
 
 mkdirSync(join(DST, 'tasks'), { recursive: true })
 for (const name of ['task-a.txt', 'task-b.txt', 'task-c.txt']) copySanitized(join(SRC, name), join(DST, 'tasks', name))
@@ -75,26 +86,26 @@ for (const name of ['task-a.txt', 'task-b.txt', 'task-c.txt']) copySanitized(joi
 mkdirSync(join(DST, 'tasks-v2'), { recursive: true })
 for (const name of ['task-1.txt', 'task-2.txt', 'task-3.txt', 'task-4.txt', 'task-5.txt']) copySanitized(join(SRC, name), join(DST, 'tasks-v2', name))
 
+mkdirSync(join(DST, 'tasks-orch'), { recursive: true })
+for (const name of ['task-a1.txt', 'task-a2.txt', 'task-a3.txt', 'task-a4.txt']) copySanitized(join(SRC, name), join(DST, 'tasks-orch', name))
+
 mkdirSync(join(DST, 'harness'), { recursive: true })
-copySanitized(join(SRC, 'run-spike.ps1'), join(DST, 'harness', 'run-spike.ps1'))
-copySanitized(join(SRC, 'analyze.mjs'), join(DST, 'harness', 'analyze.mjs'))
-copySanitized(join(SRC, 'run-lifecycle.ps1'), join(DST, 'harness', 'run-lifecycle.ps1'))
-copySanitized(join(SRC, 'analyze-lifecycle.mjs'), join(DST, 'harness', 'analyze-lifecycle.mjs'))
-
-// 2) evidence: JSONL artifacts + driver log + home snapshots. No credentials,
-//    no settings, no session logs.
-mkdirSync(join(DST, 'results'), { recursive: true })
-for (const name of readdirSync(join(SRC, 'results'))) {
-  if (!/\.(jsonl|txt|log)$/.test(name)) continue
-  if (name === 'dump-config.txt') continue
-  copySanitized(join(SRC, 'results', name), join(DST, 'results', name))
+for (const name of [
+  'run-spike.ps1',
+  'analyze.mjs',
+  'run-lifecycle.ps1',
+  'analyze-lifecycle.mjs',
+  'run-orchestration.ps1',
+  'analyze-orchestration.mjs',
+]) {
+  copySanitized(join(SRC, name), join(DST, 'harness', name))
 }
 
-mkdirSync(join(DST, 'results-v2'), { recursive: true })
-for (const name of readdirSync(join(SRC, 'results-v2'))) {
-  if (!/\.(jsonl|txt|log)$/.test(name)) continue
-  copySanitized(join(SRC, 'results-v2', name), join(DST, 'results-v2', name))
-}
+// 2) evidence: JSONL artifacts + driver logs. No credentials, no settings, no
+//    session logs.
+copyResults(join(SRC, 'results'), join(DST, 'results'))
+copyResults(join(SRC, 'results-v2'), join(DST, 'results-v2'))
+copyResults(join(SRC, 'results-orch'), join(DST, 'results-orch'))
 
 console.log(`materialized ${aliases.size} session aliases into ${DST}`)
 for (const [id, alias] of aliases) console.log(`  ${alias} <- ${id.slice(0, 8)}...`)

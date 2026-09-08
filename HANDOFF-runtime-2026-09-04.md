@@ -68,6 +68,8 @@ npm 仍 `0.1.2-rc.1`。变更摘要：Session format v2（v0/v1 经不可变 gen
 
 1. ~~**异步 lifecycle spike ①-③**~~ ✅ 2026-09-04 闭环（判决表已回填，证据 `docs/status/async-execution-lifecycle-spike-2026-09-04.md` + `experiments/async-lifecycle/`）
 2. ~~**Child Lifecycle / Ownership spike（5 case）**~~ ✅ 2026-09-04 闭环（`docs/status/child-lifecycle-ownership-spike-2026-09-04.md`）
-3. 等 v2 → 验收①-⑧ → Line B（validator patch + doctor 工具，v2 后动）
-4. 坏会话等 v2 迁移判定，不动
-5. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
+3. ~~**Child Orchestration Phase 1（wait，4 case）**~~ ✅ 2026-09-04 闭环（`docs/status/child-orchestration-semantics-phase1-2026-09-04.md`；结论：`subagent/end` 即唯一 terminal predicate，wait 落编排层）
+4. Child Orchestration Phase 2（result：report vs settlement vs final assistant）→ Phase 3（waiting 归属）
+5. 等 v2 → 验收①-⑧ → Line B（validator patch + doctor 工具，v2 后动）
+6. 坏会话等 v2 迁移判定，不动
+7. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）

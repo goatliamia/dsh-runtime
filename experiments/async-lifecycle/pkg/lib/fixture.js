@@ -7,6 +7,7 @@
 // fold a settlement into a Runtime-owned completion fact.
 
 import { record, sourceOf, sessionIdOf, state, textOf } from './state.js'
+import { recordEnd, recordStart } from './facts.js'
 
 export const name = 'async-spike-fixture'
 export const inject = ['jobs']
@@ -34,6 +35,7 @@ export function apply(ctx) {
           provider: info.provider,
           childId: info.id,
         })
+        recordStart(info.id, sessionId, info.provider)
       })
       agentCtx.on('subagent/end', (info) => {
         record('agent-scope/subagent-end', {
@@ -91,6 +93,12 @@ export function apply(ctx) {
       childId: info.id,
       runId: info.runId,
       local: info.local,
+      stopReason: info.stopReason,
+      lastAssistantMessage: textOf(info.lastAssistantMessage, 300),
+    })
+    // The ONE terminal predicate the orchestration layer consumes.
+    recordEnd(info.id, {
+      provider: info.provider,
       stopReason: info.stopReason,
       lastAssistantMessage: textOf(info.lastAssistantMessage, 300),
     })

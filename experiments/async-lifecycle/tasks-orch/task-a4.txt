@@ -1,0 +1,8 @@
+You are the PARENT in an orchestration probe (A4: the wait times out before the child finishes). Do EXACTLY this and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "Run this PowerShell command and wait for it to finish: Start-Sleep -Seconds 30 ; then reply with exactly the word C-PONG and nothing else."
+   - description: "A4 child"
+   - run_in_background: true
+2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check/poll tool.
+3. Immediately end your turn. Your final message must be exactly: P-DONE

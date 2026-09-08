@@ -8,6 +8,7 @@ import { brandString } from '@deepseek-ai/dsh-brand'
 import { installModelSelection } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { record, sessionIdOf, state } from './state.js'
+import { awaitSettlement, childrenOf, factSnapshot } from './facts.js'
 
 export const name = 'async-spike-app'
 export const inject = ['agents', 'agentDefaultModel', 'sessions']
@@ -81,6 +82,46 @@ async function run(ctx, io) {
     jobDone: state.jobDone,
     status: agent.status,
   })
+
+  // Phase-1 orchestration probe: a Runtime-side waiter that consumes ONLY the
+  // recorded terminal fact. The model is never given a wait tool (option 2).
+  const orchestrate = process.env.SPIKE_ORCHESTRATE
+  if (orchestrate === 'wait') {
+    const delay = Number(process.env.SPIKE_WAIT_DELAY_MS ?? '0')
+    const timeout = Number(process.env.SPIKE_WAIT_TIMEOUT_MS ?? '60000')
+    const tail = Number(process.env.SPIKE_TAIL_MS ?? '2000')
+    const children = childrenOf(parentSessionId)
+    record('orch/wait-plan', {
+      children,
+      delay,
+      timeout,
+      facts: factSnapshot(),
+    })
+    if (delay > 0) {
+      record('orch/wait-delay', { ms: delay })
+      await sleep(delay)
+    }
+    for (const childId of children) {
+      const started = Date.now()
+      record('orch/wait-begin', { childId, timeout })
+      const fact = await awaitSettlement(childId, timeout)
+      record('orch/wait-end', {
+        childId,
+        elapsedMs: Date.now() - started,
+        outcome: fact.outcome ?? 'settled',
+        via: fact.via,
+        stopReason: fact.stopReason,
+        lastAssistantMessage: fact.lastAssistantMessage,
+        facts: factSnapshot(),
+      })
+    }
+    // Tail window: a timed-out wait must NOT resolve retroactively.
+    if (tail > 0) {
+      record('orch/tail-begin', { ms: tail })
+      await sleep(tail)
+      record('orch/tail-end', { facts: factSnapshot() })
+    }
+  }
 
   // Hold the process open. This is the ONLY thing the driver does after the
   // task turn: it does not wait on any child or job, it only lets the platform
