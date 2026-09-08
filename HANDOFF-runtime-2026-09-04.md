@@ -38,6 +38,8 @@ npm 仍 `0.1.2-rc.1`。变更摘要：Session format v2（v0/v1 经不可变 gen
 | 共有持久化 | **D（已实证）** | job 记录不落盘、跨 restart 消失；Runtime 自己的派生 fact 跨 restart 无受契约的 runtime-owned state 通道（= v2 验收④） |
 
 > 实证详见 `docs/status/async-execution-lifecycle-spike-2026-09-04.md`，原始 artifact 在 `experiments/async-lifecycle/`（三格全部用合法形态跑通，无 synthetic assistant）。
+>
+> **子代线已单独展开**：`docs/status/child-lifecycle-ownership-spike-2026-09-04.md`（5 case 因果时序：ownership 冒泡 / waiting 不可见 / 结果传播重复与迟到）。
 
 明确排除 A（不是隐藏 tool call）。核心缺失精确清单：① job 公开**事件**对（job/start|end；现状只有服务级回调）② job 跨 restart 持久化语义（已实证：无）③ runtime-owned state 通道。**不需要**任何 synthetic assistant 通道。
 
@@ -65,6 +67,7 @@ npm 仍 `0.1.2-rc.1`。变更摘要：Session format v2（v0/v1 经不可变 gen
 ## 六、待办
 
 1. ~~**异步 lifecycle spike ①-③**~~ ✅ 2026-09-04 闭环（判决表已回填，证据 `docs/status/async-execution-lifecycle-spike-2026-09-04.md` + `experiments/async-lifecycle/`）
-2. 等 v2 → 验收①-⑧ → Line B（validator patch + doctor 工具，v2 后动）
-3. 坏会话等 v2 迁移判定，不动
-4. 仓库名/可见性（问用户一次）
+2. ~~**Child Lifecycle / Ownership spike（5 case）**~~ ✅ 2026-09-04 闭环（`docs/status/child-lifecycle-ownership-spike-2026-09-04.md`）
+3. 等 v2 → 验收①-⑧ → Line B（validator patch + doctor 工具，v2 后动）
+4. 坏会话等 v2 迁移判定，不动
+5. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）

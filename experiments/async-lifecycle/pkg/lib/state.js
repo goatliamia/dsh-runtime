@@ -39,7 +39,10 @@ export function textOf(content, max = 600) {
   if (!Array.isArray(content)) return ''
   let out = ''
   for (const block of content) {
-    if (block !== null && typeof block === 'object' && block.type === 'text' && typeof block.text === 'string') out += block.text
+    if (block === null || typeof block !== 'object') continue
+    if (block.type === 'text' && typeof block.text === 'string') out += block.text
+    // A tool-result block nests the model-facing content one level deeper.
+    if (block.type === 'tool-result') out += textOf(block.content, max)
   }
   return out.length > max ? `${out.slice(0, max)}...[truncated]` : out
 }

@@ -1,0 +1,10 @@
+You are the PARENT in a child-lifecycle probe (case 4: child disposed by interrupt). Do EXACTLY this, in order, and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "Run this PowerShell command and wait for it to finish: Start-Sleep -Seconds 60 ; then reply with exactly the word C-PONG and nothing else."
+   - description: "case4 child"
+   - run_in_background: true
+2. Then call the pwsh tool ONCE, foreground, with command: Start-Sleep -Seconds 8
+3. Then call the list_agents tool ONCE and report its raw output verbatim.
+4. Then call the interrupt_agent tool ONCE with the child agent id you just listed.
+5. Then end your turn. Your final message must contain the raw list_agents output and then the word P-DONE.

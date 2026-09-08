@@ -1,0 +1,8 @@
+You are the PARENT in a child-lifecycle probe (case 5: settled notice versus a late full report). Do EXACTLY this, in order, and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "You are the CHILD. Do exactly this and nothing else: (a) call the pwsh tool once, foreground, with command Start-Sleep -Seconds 10; (b) then call the send_message tool once to your direct parent with the message text: CHILD-FULL-REPORT-START followed by a 150-word explanation of why sleep is useful for humans, followed by CHILD-FULL-REPORT-END; (c) then immediately end your turn with the single word C-DONE."
+   - description: "case5 child"
+   - run_in_background: true
+2. Immediately end your turn. Your final message must be exactly: P-DONE
+3. If the platform later wakes you with any notice about the child, reply with exactly the single word FINAL and then stop.

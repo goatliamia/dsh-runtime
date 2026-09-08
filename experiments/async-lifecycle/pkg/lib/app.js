@@ -87,13 +87,15 @@ async function run(ctx, io) {
   // deliver whatever it delivers. `SPIKE_EXIT_ON` chooses which platform-native
   // completion signal ends the window early.
   const exitOn = process.env.SPIKE_EXIT_ON ?? 'none'
+  const [exitKind, exitCountRaw] = exitOn.split(':')
+  const exitCount = Number(exitCountRaw)
   const deadline = Date.now() + holdMs()
   while (Date.now() < deadline) {
     const resumed = state.parentTurnStarts >= 2
-    // The subagent case wants the platform's OWN settlement resume (turn 3),
-    // not just the child's own relay message (turn 2).
-    if (exitOn === 'subagent-end' && state.subagentEnds >= 1 && state.parentTurnStarts >= 3) break
-    if (exitOn === 'job-done' && resumed && state.jobDone >= 1) break
+    const wanted = Number.isFinite(exitCount) && exitCount > 0 ? exitCount : 1
+    // `subagent-end:N` waits for N lifecycle ends AND a platform resume.
+    if (exitKind === 'subagent-end' && resumed && state.subagentEnds >= wanted) break
+    if (exitKind === 'job-done' && resumed && state.jobDone >= wanted) break
     await sleep(250)
   }
 

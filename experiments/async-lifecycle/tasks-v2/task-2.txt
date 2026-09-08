@@ -1,0 +1,10 @@
+You are the PARENT in a child-lifecycle probe (case 2: child waits on a grandchild). Do EXACTLY this, in order, and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "You are the CHILD. Do exactly this and nothing else: (a) call the subagent tool once with prompt 'Run this PowerShell command and wait for it to finish: Start-Sleep -Seconds 45 ; then reply with exactly the word G-PONG and nothing else.', description 'case2 grandchild', run_in_background true; (b) then immediately end your turn with the single word C-DONE. Do not wait, do not check, do not poll, do not call list_agents."
+   - description: "case2 child"
+   - run_in_background: true
+2. Then call the pwsh tool ONCE, foreground (run_in_background false), with command: Start-Sleep -Seconds 15
+3. Then call the list_agents tool ONCE and report its raw output verbatim.
+4. Then end your turn. Your final message must contain the raw list_agents output and then the word P-DONE.
+Call list_agents exactly once. Do not poll.

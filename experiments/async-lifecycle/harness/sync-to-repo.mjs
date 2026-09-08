@@ -72,9 +72,14 @@ for (const name of ['app.js', 'fixture.js', 'state.js']) copySanitized(join(SRC,
 mkdirSync(join(DST, 'tasks'), { recursive: true })
 for (const name of ['task-a.txt', 'task-b.txt', 'task-c.txt']) copySanitized(join(SRC, name), join(DST, 'tasks', name))
 
+mkdirSync(join(DST, 'tasks-v2'), { recursive: true })
+for (const name of ['task-1.txt', 'task-2.txt', 'task-3.txt', 'task-4.txt', 'task-5.txt']) copySanitized(join(SRC, name), join(DST, 'tasks-v2', name))
+
 mkdirSync(join(DST, 'harness'), { recursive: true })
 copySanitized(join(SRC, 'run-spike.ps1'), join(DST, 'harness', 'run-spike.ps1'))
 copySanitized(join(SRC, 'analyze.mjs'), join(DST, 'harness', 'analyze.mjs'))
+copySanitized(join(SRC, 'run-lifecycle.ps1'), join(DST, 'harness', 'run-lifecycle.ps1'))
+copySanitized(join(SRC, 'analyze-lifecycle.mjs'), join(DST, 'harness', 'analyze-lifecycle.mjs'))
 
 // 2) evidence: JSONL artifacts + driver log + home snapshots. No credentials,
 //    no settings, no session logs.
@@ -83,6 +88,12 @@ for (const name of readdirSync(join(SRC, 'results'))) {
   if (!/\.(jsonl|txt|log)$/.test(name)) continue
   if (name === 'dump-config.txt') continue
   copySanitized(join(SRC, 'results', name), join(DST, 'results', name))
+}
+
+mkdirSync(join(DST, 'results-v2'), { recursive: true })
+for (const name of readdirSync(join(SRC, 'results-v2'))) {
+  if (!/\.(jsonl|txt|log)$/.test(name)) continue
+  copySanitized(join(SRC, 'results-v2', name), join(DST, 'results-v2', name))
 }
 
 console.log(`materialized ${aliases.size} session aliases into ${DST}`)

@@ -3,7 +3,9 @@
 Evidence harness for the question: **can the Runtime own async Subagent / background-Job
 lifecycle and react when work actually settles, instead of the Agent waiting, checking, or polling?**
 
-Full findings: [`docs/status/async-execution-lifecycle-spike-2026-09-04.md`](../../docs/status/async-execution-lifecycle-spike-2026-09-04.md).
+Full findings:
+[`docs/status/async-execution-lifecycle-spike-2026-09-04.md`](../../docs/status/async-execution-lifecycle-spike-2026-09-04.md) (v1: settlement + wakeup)
+and [`docs/status/child-lifecycle-ownership-spike-2026-09-04.md`](../../docs/status/child-lifecycle-ownership-spike-2026-09-04.md) (v2: ownership tree, waiting semantics, result propagation).
 This directory is the re-runnable harness plus the desensitized raw artifacts.
 
 ```text
@@ -12,9 +14,11 @@ pkg/       the spike bundle (one package, two loader rows)
   lib/fixture.js   also folds ctx.jobs.onJobDone / onJobsChanged (public service listeners)
   lib/app.js       direct driver: runs ONE task turn, then holds the process open
   lib/state.js     shared leaf-field-only evidence recorder
-tasks/     the three probe prompts (ASCII)
-harness/   run-spike.ps1 (driver) · analyze.mjs (fold) · sync-to-repo.mjs (desensitize)
-results/   a|b|c .jsonl + driver log + home file snapshots (session ids aliased)
+tasks/     the three v1 probe prompts (ASCII)
+tasks-v2/  the five child-lifecycle case prompts (ASCII)
+harness/   run-spike.ps1 · analyze.mjs · run-lifecycle.ps1 · analyze-lifecycle.mjs · sync-to-repo.mjs
+results/   v1: a|b|c .jsonl + driver log + home file snapshots (session ids aliased)
+results-v2/ v2: case1..5 .jsonl + analysis.txt (causal timeline, roles derived from observed edges)
 ```
 
 ## Why the driver is not `dsh --profile headless`
@@ -55,5 +59,15 @@ Environment notes that matter for reproducing this:
 | a | one `subagent` call (`backgroundMode: continuable`), then end the turn | parent-scope + root-scope `subagent/start|end` fold; platform auto-resume |
 | b | one `pwsh` call with `run_in_background: true`, then end the turn | user-role wakeup notice; `jobs.onJobDone`/`onJobsChanged` observability |
 | c | fresh process: `job_list` | job state does not survive a host restart |
+
+## Child-lifecycle cases (v2)
+
+| case | prompt | what it proves |
+|---|---|---|
+| 1 | P spawns C, ends the turn | settlement notice vs `subagent/end` ordering; duplicate relay content |
+| 2 | C spawns G, C ends its turn; P sleeps then calls `list_agents` once | `waiting` is invisible: `list_agents` reports `idle` while C owns a live grandchild |
+| 3 | P spawns C, C spawns G, both end their turns | ownership release bubbles up child-first; a parent cannot settle while it owns a live child |
+| 4 | P spawns C, lists, then `interrupt_agent`s it | disposed terminal (`stopReason=aborted`); notice steered into a busy parent turn |
+| 5 | C sleeps, sends a full report relay, then ends | a settlement notice opens an extra turn **after** the parent already answered |
 
 Artifacts are leaf-field JSONL: no Service, Agent, Session, or message object is ever serialized.

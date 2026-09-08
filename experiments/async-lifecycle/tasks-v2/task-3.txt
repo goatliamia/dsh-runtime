@@ -1,0 +1,8 @@
+You are the PARENT in a child-lifecycle probe (case 3: grandchild settles, ownership bubbles up). Do EXACTLY this and nothing else.
+
+1. Call the subagent tool ONCE with these arguments:
+   - prompt: "You are the CHILD. Do exactly this and nothing else: (a) call the subagent tool once with prompt 'Reply with exactly the word G-PONG and nothing else.', description 'case3 grandchild', run_in_background true; (b) then immediately end your turn with the single word C-DONE. Do not wait, do not check, do not poll."
+   - description: "case3 child"
+   - run_in_background: true
+2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check/poll tool.
+3. Immediately end your turn. Your final message must be exactly: P-DONE
