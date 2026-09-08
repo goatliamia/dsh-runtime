@@ -72,6 +72,8 @@
 3. ~~**Child Orchestration Phase 1（wait，4 case）**~~ ✅ 2026-09-04 闭环（`docs/status/child-orchestration-semantics-phase1-2026-09-04.md`；结论：`subagent/end` 即唯一 terminal predicate，wait 落编排层）
 4. ~~**Child Orchestration Phase 2（result，4 case）**~~ ✅ 2026-09-08 闭环（`docs/status/child-orchestration-semantics-phase2-2026-09-08.md`；结论：result = child-authored relay + settlement stub 两条独立通道，不排序不合并）
 5. ~~**升级 0.1.3-alpha.2 + 影响核对**~~ ✅ 2026-09-08（`docs/status/dsh-0.1.3-alpha.2-update-impact-2026-09-08.md`；9 case 重跑 21/21，runtime 插件无影响）
-6. Child Orchestration Phase 3（waiting 是 model-facing 还是 orchestration-facing）
-7. v2 验收②（坏会话迁移命运）——需真跑，按指示暂不动；③④⑦静态已答（仍拒绝 / 仍无 / 不变）
-8. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
+6. ~~**Child Result provenance 分层 + 轨迹插件可用性**~~ ✅ 2026-09-08（`docs/status/child-result-provenance-and-trajectory-tooling-2026-09-08.md`；结论：**无 Result primitive**，collect 不该由 runtime 定义；`dsh-analysis-view` 对已结算会话在 v2 上失效，根因 `sessionPersistence.inspect` 被 SessionHandle 取代）
+7. Child Orchestration Phase 3（waiting 是 model-facing 还是 orchestration-facing）
+8. v2 验收②（坏会话迁移命运）——需真跑，按指示暂不动；③④⑦静态已答（仍拒绝 / 仍无 / 不变）
+9. 用户侧待修（不属本线）：`dsh-analysis-view` 兜底改用 `sessionPersistence.open()` + `SessionHandle.read()`
+10. 仓库名/可见性（已定：保持 `dsh-runtime-react` + PUBLIC）
