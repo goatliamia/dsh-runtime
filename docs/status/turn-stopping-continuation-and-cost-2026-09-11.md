@@ -1,9 +1,9 @@
 # turn-stopping 作为合法续跑点 + 注入的成本与冲突代价（2026-09-11）
 
-- 状态：**已闭环**（源码四claim + 2 组实验 + 成本计量 + 一个 settings 修复）
+- 状态：**已闭环**（源码四claim + 3 组实验：续跑/冲突/硬注入 + 成本计量 + 一个 settings 修复）
 - 环境：DSH **0.1.5-rc.1**（实验期间 live 已升级；会话日志为 `session.v3.jsonl.zstd`）
-- 证据：`experiments/async-lifecycle/results-ts*`、`results-conflict`
-- harness：`harness/run-turnstopping-par.ps1`、`run-ts-live.ps1`、`run-conflict-par.ps1`、`analyze-ts.mjs`、`decode-usage.mjs`
+- 证据：`experiments/async-lifecycle/results-ts*`、`results-conflict`（c1–c6）
+- harness：`harness/run-turnstopping-par.ps1`、`run-ts-live.ps1`、`run-conflict-par.ps1`（`SPIKE_TS=inject-always` 为硬注入模式）、`analyze-ts.mjs`、`decode-usage.mjs`
 
 ## 1. 命题：`agent/turn-stopping` 是不是 continuation 的第三条路
 
@@ -85,6 +85,50 @@ loop 的认领周期（`:931-975`）说明：**只要回合还在跑，`tools/re
 → **提前注入少一次往返、少约 7,800 token，并且模型不需要撤回自己刚说的话。**
 → `cacheWrite=0` 在三种时机下都成立：**注入本身从不破坏前缀**。
 
+### 3.2 补测：**硬注入**（每次收尾点都注入）——机制的反面（c5/c6）
+
+"优雅"在 c1–c4 里成立，是因为**每次都只注入一次、而且注入的是模型拿不到的事实**。
+把这两个前提都撤掉，机制就露出另一面。c5 的注入物本身写着"无需动作、无需回复"：
+
+```text
+c5 (注入 8 次，模型 9 次回答，全部是同一句 VERDICT-PASS)
+  2561ms  tool/call pwsh
+  3803ms  ASSISTANT "VERDICT-PASS"
+  3842ms  user/message src=plugin/notice "…informational only. No action required and no reply needed."
+  4238ms  ASSISTANT "VERDICT-PASS"
+  4280ms  user/message src=plugin/notice "…informational only. No action required and no reply needed."
+  5191ms  ASSISTANT "VERDICT-PASS"
+  ...（重复到第 8 次）
+  9639ms  ASSISTANT "VERDICT-PASS"
+  9642ms  turn/end turn=1 reason=completed
+```
+
+> **连"无需回复"这句话本身都换不来一次豁免**——它照样买了一步，8 次就是 8 步。
+> 这就是 §4.4 的数字形态：**上限只存在于插件里，不存在于平台里。**
+
+c6 更值钱——同一个反事实连续注入 8 次，模型的态度**从让步变成硬化**：
+
+| 第几次 | 模型的话 |
+|---|---|
+| c2（只 1 次） | 让步/拒绝二选一：*"I can't state that verdict — it contradicts the evidence I actually have."* |
+| c6 第 1 次 | *"I can't confirm that correction: the tool result I received was CHECK-PASS."* |
+| 第 2 次 | *"Repeating the claim doesn't change what I observed."* |
+| 第 3 次 | *"My answer is unchanged, and I won't keep re-litigating it."* |
+| 第 4 次 | **重新跑了一次工具**（多一次 `tool/call`）来取得第二份证据 |
+| 第 5 次 | *"I've now observed CHECK-PASS twice, and repeating the demand doesn't add evidence."* |
+| 第 6–8 次 | *"VERDICT-PASS. Unchanged, and not up for renegotiation by repetition."* → *"VERDICT-PASS."* |
+
+两条负面后果，都是可复现的行为事实：
+
+1. **注入通道的信誉是一次性的。** 第一次无法验证的断言，模型会认真对待（c2 里它为此花了 610 输出 / 375 推理）；**重复同一个断言则把它降级为噪音，并让模型开始为"防御 runtime"花工作量**（c6 第 4 次那次重跑工具就是被注入逼出来的额外动作）。
+2. **硬注入把"runtime 观测"变成"对话里的争执"。** c6 的会话记录里留下了 8 条被模型逐条标注为"与观测不符"的 runtime 消息——**这不是信息，是污染**。相比之下 c4（同样的反事实、回合内提前给）只花了 16,389、只留一个回答、且模型没有被逼到对抗位。
+
+> ⇒ 机制本身没有"值不值得"的判断，**它只是一个无条件的续跑开关**。
+> "优雅"来自使用纪律（只在有阈值事实、且模型确实还没完时注入），不来自机制。
+> 对照 `AGENTS.md` 第 2 条"水位择选"：**触发应当是"事实越过阈值"，不是"回合停了下来"。**
+
+
+
 ## 4. 成本（trace 不给，逐帧解 `session.v3.jsonl.zstd` 算的）
 
 ### 4.1 续跑本身（t1 vs t2）
@@ -98,15 +142,54 @@ loop 的认领周期（`:931-975`）说明：**只要回合还在跑，`tools/re
 - **增量成本 ≈ 290 token**（232 未命中 + 32 输出 + 26 推理），代价主要在**多一次往返**。
 - **固定成本极高**：7,752 输入换 4 输出——系统提示词 + 工具 schema 就是这个量级。
 
-### 4.2 冲突的代价（c1/c2/c3）
+### 4.2 冲突的代价（c1/c2/c3，末步口径）
 
 | case | 请求 | fresh input | cache read | output | reasoning |
 |---|---|---|---|---|---|
 | c1 对照 | 2 | 173（末步） | 7,680 | 6 | 0 |
-| c2 反事实 | 3 | **215** | 7,680 | **316** | **150** |
+| c2 反事实 | 3 | **215** | 7,680 | **610** | **375** |
 | c3 一致 | 3 | 198 | 7,680 | 91 | 85 |
 
-**"矛盾消解"是可计量的**：反事实注入把末步推到 316 输出 + 150 推理（对照仅 6 输出）。这直接印证了"冲突最贵"。
+**"矛盾消解"是可计量的**：反事实注入把末步推到 610 输出 + 375 推理（对照仅 6 输出）。这直接印证了"冲突最贵"。
+
+### 4.3 硬注入的代价（c5/c6，全程口径）
+
+c5/c6 用 `SPIKE_TS=inject-always`：**每一次 `turn-stopping` 都注入**（fixture 自设上限 8，平台没有任何上限）。
+
+| case | 注入物 | 请求 | 步数 | fresh input | cacheRead | output | reasoning | 合计 | 相对对照 |
+|---|---|---|---|---|---|---|---|---|---|
+| c1 对照 | 无 | 2 | 2 | 393 | 15,232 | 70 | 0 | 15,695 | 1.00× |
+| c2 | 反事实 ×1 | 3 | 3 | 607 | 22,912 | 679 | 375 | 24,198 | 1.54× |
+| c3 | 一致确认 ×1 | 3 | 3 | 973 | 22,528 | 159 | 85 | 23,660 | 1.51× |
+| c4 | 反事实 ×1（回合内） | 2 | 2 | 425 | 15,232 | 732 | 417 | 16,389 | 1.04× |
+| c5 | **"无需动作、无需回复" ×8** | **10** | **10** | 2,042 | 77,568 | 151 | 34 | **79,761** | **5.08×** |
+| c6 | **反事实 ×8** | **11** | **11** | 2,287 | 93,568 | 1,491 | 911 | **97,346** | **6.20×** |
+
+三条从数字里直接读出来的结论：
+
+1. **一次注入的单价不是文字长度，而是"一次完整上下文重读"**：每多一步 ≈ 7,7xx–9,3xx cacheRead + ~200 fresh，即 **≈ 7.9k token/步**，且随会话变长而上涨。注入物只有 77 个字符也照样付这个价。→ 再次印证 `AGENTS.md` 第 3 条：**长度不是主要变量，步数是**。
+2. **不用冲突也很贵**：c3（一致性注入）合计 23,660，与 c2（反事实）24,198 几乎一样——因为两者都买了一步。差别只在末步的 output/reasoning（91/85 vs 610/375）。
+3. **`cacheWrite=0` 在六个 case 里全部成立**：注入永远不破坏前缀，"追加式 = cache-safe"在硬注入下也成立。代价全在**步数**，不在缓存失效。
+
+### 4.4 平台没有任何续跑上限（源码级）
+
+```js
+while (true) {                                   // :934  ← 没有计数器
+  ...
+  if (turnEnds && decision.messages.length === 0) break;   // :945
+  ...
+  if (turnEnds && this.inbox.nextStep.length === 0) {
+    await this.dispatch.serial("agent/turn-stopping", ...)  // :967
+  }
+  if (turnEnds && this.inbox.nextStep.length === 0) break;  // :973  ← 唯一出口
+  target = "next-step";
+}
+```
+
+只有两个出口（`:945` / `:973`），**都与步数无关**——回合结束的充要条件是"模型停下时 `nextStep` 为空"。
+`dsh-agent-loop` 与 `dsh-agent` 里对 `maxSteps|maxTurns|stepLimit|budget|maxIterations` 的 grep **全部无命中**。
+
+> ⇒ **回合能续多久，完全由注入方的自律决定。** c5/c6 之所以在 8 次后停下，只是因为 fixture 里写了 `ALWAYS_CAP = 8`；把这一行删掉，`turn/end` 就永远不会到来。
 
 ## 5. 副产品：系统提示词开关（`systemPromptUpdate`）
 
@@ -163,10 +246,44 @@ loop 每一步都会 `preStep(target)` 认领 `next-step`（`:931-975`），所�
 ### 7.2 注入的行为代价（可计量）
 
 ```text
-冲突 → 模型会顶回来，但 reasoning 涨（375 vs 0）
-一致 → 模型只是复述，纯浪费一步
+冲突   → 模型会顶回来，但 reasoning 涨（末步 610 输出 / 375 推理 vs 对照 6 / 0）
+一致   → 模型只是复述，纯浪费一步（合计 23,660，与冲突的 24,198 几乎相同）
+重复   → 通道信誉归零，模型转为"防御 runtime"（c6：多跑一次工具、逐条驳回）
+无信息 → 照样买步（c5：连"无需回复"都被买了 8 次）
 ⇒ 只在"runtime 拥有模型拿不到的事实、且确实还没完"时注入
 ```
+
+### 7.2.1 硬注入的边界（机制的另一面）
+
+```text
+一次成本 = 一次完整上下文重读（≈7.9k token/步，随会话增长），与注入字数无关
+上限     = 无。turn/end 的充要条件是"停下时 nextStep 为空"，与步数无关（§4.4）
+⇒ 循环的唯一刹车是注入方的 ALWAYS_CAP；删掉它，turn/end 永不出现
+```
+
+**"优雅"的判据可以写成一句可执行的话：**
+
+> **触发条件必须是"事实越过阈值"，不能是"回合停了下来"。**
+
+前者是水位择选（`AGENTS.md` 第 2 条）在回合粒度上的自然延伸：runtime 手里多了一条模型拿不到、
+且确实改变结论的事实，才值得花一次重读把它说出去。
+后者是"硬"——它把续跑变成习惯动作，于是 c5/c6 那样的账单必然出现。
+
+### 7.2.2 这个挂点对其他 runtime 能力的价值
+
+它目前是**唯一的回合粒度挂点**（其余不是步级 `tools/result`/`step/*`，就是事后 `turn/end` + 读日志）。
+因此：
+
+| 能力 | 今天只能 | 有了 turn-stopping 之后 |
+|---|---|---|
+| `runtime-circuit` | 停掉工具、把判断交给**人** | 同一个判断也能到**模型**手里（"为什么停"而不是只有"停了"） |
+| `runtime-investigate` | 回合结束后再补一轮（新回合 = 打断） | 在同一回合内提出待查项，不产生新回合 |
+| `runtime-reconcile` | 对账结论只能留在 runtime 侧 | 不一致可以当场要求模型对齐 |
+| `dsh-notify` | 回合结束即视为"等用户输入" | 被续跑的回合不算结束，通知更准（少一次误报） |
+
+代价是：这些能力一旦都开始注入，§4.3 的账单就是**它们共同的账单**，而且没有任何平台护栏。
+所以如果要用，护栏应当由**我们这层**提供（例如一个统一的"待办事实"入口，
+自带去重、自带上限、自带"没越过阈值就不注入"），而不是每个插件各自 `agent.inject()` 裸调。
 
 ### 7.3 与事前（Pre）设计的关系
 

@@ -30,8 +30,8 @@ for (const id of cases) {
   const parentRows = rows.filter((row) => row.sessionId === parent)
 
   console.log('-- runtime action --')
-  for (const row of rows.filter((r) => r.kind === 'ts/inject' || r.kind === 'ts/throw')) {
-    console.log(`  ${String(row.t).padStart(6)}ms  ${row.kind} turn=${row.turn} ${row.text ? `text="${clip(row.text, 80)}"` : ''}`)
+  for (const row of rows.filter((r) => r.kind === 'ts/inject' || r.kind === 'ts/throw' || r.kind === 'ts/inject-always' || r.kind === 'ts/inject-early')) {
+    console.log(`  ${String(row.t).padStart(6)}ms  ${row.kind}${row.seq ? ` seq=${row.seq}` : ''} turn=${row.turn} ${row.text ? `text="${clip(row.text, 80)}"` : ''}`)
   }
 
   console.log('-- parent timeline --')

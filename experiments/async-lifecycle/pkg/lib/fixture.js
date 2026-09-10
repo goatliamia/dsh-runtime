@@ -31,8 +31,14 @@ export function apply(ctx) {
   // finish. Nothing is forged: the injected message is user-role with a plugin
   // source, and the next step is generated and logged by the loop itself.
   const tsMode = process.env.SPIKE_TS
-  if (tsMode === 'inject' || tsMode === 'throw' || tsMode === 'inject-early') {
+  if (tsMode === 'inject' || tsMode === 'throw' || tsMode === 'inject-early' || tsMode === 'inject-always') {
     const injected = new Set()
+    let alwaysCount = 0
+    // A refusal proof: the loop has NO bound on how many times a turn may be
+    // extended. This mode injects on every turn-stopping up to a self-imposed
+    // cap, so the run stays affordable; the cap is the fixture's, not the
+    // platform's.
+    const ALWAYS_CAP = 8
     const injectOnce = (agent, turn, kind) => {
       const sessionId = sessionIdOf(agent)
       // Only the primary conversation participates; children have their own turns.
@@ -46,7 +52,23 @@ export function apply(ctx) {
         source: { kind: 'plugin', plugin: 'async-spike-fixture', form: 'notice', summary: 'runtime observation' },
       }))
     }
-    if (tsMode === 'inject-early') {
+    const injectEveryTime = (agent, turn) => {
+      const sessionId = sessionIdOf(agent)
+      if (sessionId === undefined || sessionId !== state.parentSessionId) return
+      if (alwaysCount >= ALWAYS_CAP) return
+      alwaysCount += 1
+      const text = process.env.SPIKE_TS_TEXT ?? 'Runtime observation: the contract still has an unchecked item.'
+      record('ts/inject-always', { sessionId, turn, seq: alwaysCount, text })
+      agent.inject(createUserMessage({
+        content: [{ type: 'text', text }],
+        source: { kind: 'plugin', plugin: 'async-spike-fixture', form: 'notice', summary: 'runtime observation' },
+      }))
+    }
+    if (tsMode === 'inject-always') {
+      ctx.on('agent/turn-stopping', ({ agent, turn }) => {
+        injectEveryTime(agent, turn)
+      })
+    } else if (tsMode === 'inject-early') {
       // Deliver the SAME observation, but while the turn is still running: a
       // tool result is a step-internal boundary, so the loop claims the message
       // at the next step and the turn continues with no checkpoint needed.
