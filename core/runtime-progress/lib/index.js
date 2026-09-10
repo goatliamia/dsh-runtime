@@ -235,6 +235,11 @@ export function apply(ctx) {
 
   ctx.on("session/event", (session, event) => {
     try {
+      // A delegated child session is not the primary conversation: never let a
+      // subagent take the latch, and never fold its events into the fact layer.
+      // (Subagent prompts are recorded as source.kind === "user", so nothing
+      // else distinguishes them here.)
+      if (session?.header?.origin === "subagent") return;
       if (sessionId !== null && session?.id !== sessionId) return;
       if (sessionId === null) sessionId = session?.id ?? null;
       const t0 = performance.now();

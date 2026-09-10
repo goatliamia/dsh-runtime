@@ -161,6 +161,12 @@ export function apply(ctx, config = {}) {
     if (typeof kind !== "string" || typeof turn !== "number") return;
     if (reasons.length > 0 && !reasons.includes(kind)) return;
 
+    // A delegation child is not a conversation the user is waiting on. Its
+    // initial prompt is recorded with source.kind === "user" (measured on
+    // 0.1.3-alpha.2 and 0.1.5-rc.1), so the user-input heuristic below cannot
+    // filter it — the session header can.
+    if (session?.header?.origin === "subagent") return;
+
     const events = Array.isArray(session?.events) ? session.events : [];
     if (events.length === 0) return;
 

@@ -275,6 +275,11 @@ export function apply(ctx, _config) {
   // ---- circuit observation (tools/result, the E4/E4b fingerprint loop) ----
   ctx.on("tools/result", (exec, result) => {
     if (!configNow().circuit) return;
+    // A delegated child runs its own agent loop: folding its failures into this
+    // fingerprint would let a child open a circuit that blocks the PRIMARY
+    // agent's tool, and would inject the child's failure as the parent's
+    // observation. Only the primary conversation owns a circuit.
+    if (exec?.agent?.session?.header?.origin === "subagent") return;
     if (!result?.isError) return;
     const toolName = String(exec?.name ?? "");
     if (!toolName) return;

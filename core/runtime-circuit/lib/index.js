@@ -113,6 +113,8 @@ export function apply(ctx) {
 
   ctx.on("session/event", (session, event) => {
     try {
+      // Delegated child sessions stay out of the primary fact window.
+      if (session?.header?.origin === "subagent") return;
       if (sessionId !== null && session?.id !== sessionId) return;
       if (sessionId === null) sessionId = session?.id ?? null;
       events.push(event);
