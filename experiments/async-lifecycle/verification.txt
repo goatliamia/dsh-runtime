@@ -57,7 +57,7 @@ R1
     1022ms  CLAIM turn=1 user
     1982ms  ASSISTANT ""
     2449ms  ASSISTANT "P-DONE"
-   12260ms  INBOX agent-message/relay "Agent session-t sen..."
+   12260ms  INBOX agent-message/relay "Agent session-AZ sen..."
    12262ms  turn/start turn=2
    12263ms  CLAIM turn=2 agent-message/relay
    12782ms  INBOX subagent-settled/notice "Background subagent 029840ff-1c81-493c-a888-f7..."
@@ -73,7 +73,7 @@ R2
     1008ms  CLAIM turn=1 user
     2233ms  ASSISTANT ""
     3432ms  ASSISTANT ""
-   12306ms  INBOX agent-message/relay "Agent session-w sen..."
+   12306ms  INBOX agent-message/relay "Agent session-BC sen..."
    12989ms  INBOX subagent-settled/notice "Background subagent fc079af6-e89e-4768-b7a5-a2..."
    34129ms  CLAIM turn=1 agent-message/relay
    34130ms  CLAIM turn=1 subagent-settled/notice
@@ -87,7 +87,7 @@ R3
     1017ms  CLAIM turn=1 user
     2502ms  ASSISTANT ""
     3015ms  ASSISTANT "P-DONE"
-   10859ms  INBOX agent-message/relay "Agent session-| sen..."
+   10859ms  INBOX agent-message/relay "Agent session-BH sen..."
    10860ms  turn/start turn=2
    10861ms  CLAIM turn=2 agent-message/relay
    11307ms  ASSISTANT "ACK"
@@ -95,7 +95,7 @@ R3
    11341ms  turn/start turn=3
    11342ms  CLAIM turn=3 subagent-settled/notice
    11987ms  ASSISTANT "ACK"
-   18796ms  INBOX agent-message/relay "Agent session-z sen..."
+   18796ms  INBOX agent-message/relay "Agent session-BF sen..."
    18798ms  turn/start turn=4
    18800ms  CLAIM turn=4 agent-message/relay
    19497ms  ASSISTANT "ACK"
@@ -112,7 +112,7 @@ R4
      998ms  CLAIM turn=1 user
     2146ms  ASSISTANT ""
     3274ms  ASSISTANT "P-DONE"
-    4260ms  INBOX agent-message/relay "Agent session- sen..."
+    4260ms  INBOX agent-message/relay "Agent session-BK sen..."
     4262ms  turn/start turn=2
     4264ms  CLAIM turn=2 agent-message/relay
     4780ms  ASSISTANT "ACK"

@@ -1,19 +1,19 @@
 {"t":207,"kind":"fixture/boot","pid":5916,"jobsVisibleToUnscopedCaller":0}
-{"t":639,"kind":"agent/created","sessionId":"session-"}
-{"t":640,"kind":"agent-scope/registered","scopeSessionId":"session-"}
-{"t":642,"kind":"app/parent-session","sessionId":"session-","provider":"deepseek-official","model":"deepseek-v4.1-flash-expires-on-0910","cwd":"<HOME>\\Documents"}
+{"t":639,"kind":"agent/created","sessionId":"session-CO"}
+{"t":640,"kind":"agent-scope/registered","scopeSessionId":"session-CO"}
+{"t":642,"kind":"app/parent-session","sessionId":"session-CO","provider":"deepseek-official","model":"deepseek-v4.1-flash-expires-on-0910","cwd":"<HOME>\\Documents"}
 {"t":643,"kind":"app/task","text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
-{"t":646,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
-{"t":649,"kind":"agent/status","sessionId":"session-","status":"running"}
-{"t":650,"kind":"derived/state","sessionId":"session-","state":"running"}
-{"t":652,"kind":"session/turn-start","sessionId":"session-","isParent":true,"seq":4,"turn":1}
-{"t":655,"kind":"inbox/claimed","sessionId":"session-","turn":1,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
-{"t":747,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":8,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
-{"t":749,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":9,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`)."}
-{"t":12828,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":18,"source":{"kind":"model","provider":"deepseek-official"},"text":"DONE-A"}
-{"t":12830,"kind":"ts/throw","sessionId":"session-","turn":1}
-{"t":12832,"kind":"session/turn-end","sessionId":"session-","isParent":true,"seq":20,"turn":1,"reason":"error"}
-{"t":12833,"kind":"agent/status","sessionId":"session-","status":"idle"}
-{"t":12834,"kind":"derived/state","sessionId":"session-","state":"idle"}
+{"t":646,"kind":"inbox/inserted","sessionId":"session-CO","source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":649,"kind":"agent/status","sessionId":"session-CO","status":"running"}
+{"t":650,"kind":"derived/state","sessionId":"session-CO","state":"running"}
+{"t":652,"kind":"session/turn-start","sessionId":"session-CO","isParent":true,"seq":4,"turn":1}
+{"t":655,"kind":"inbox/claimed","sessionId":"session-CO","turn":1,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":747,"kind":"session/user-message","sessionId":"session-CO","isParent":true,"seq":8,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":749,"kind":"session/user-message","sessionId":"session-CO","isParent":true,"seq":9,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`)."}
+{"t":12828,"kind":"session/assistant-message","sessionId":"session-CO","isParent":true,"seq":18,"source":{"kind":"model","provider":"deepseek-official"},"text":"DONE-A"}
+{"t":12830,"kind":"ts/throw","sessionId":"session-CO","turn":1}
+{"t":12832,"kind":"session/turn-end","sessionId":"session-CO","isParent":true,"seq":20,"turn":1,"reason":"error"}
+{"t":12833,"kind":"agent/status","sessionId":"session-CO","status":"idle"}
+{"t":12834,"kind":"derived/state","sessionId":"session-CO","state":"idle"}
 {"t":12837,"kind":"app/first-idle","parentTurnStarts":1,"subagentEnds":0,"jobDone":0,"status":"idle"}
 {"t":25004,"kind":"app/hold-end","outcome":"timeout","exitOn":"none","parentTurnStarts":1,"subagentStarts":0,"subagentEnds":0,"jobDone":0,"jobChanged":0,"status":"idle"}

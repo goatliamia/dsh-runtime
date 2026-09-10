@@ -21,8 +21,23 @@ const REPO = process.env.ASYNC_SPIKE_REPO ?? 'D:\\projects\\runtime\\dsh-runtime
 const SESSION_RE = /(?:session-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g
 const aliases = new Map()
 
+/**
+ * Bijective base-26 label: A..Z, AA, AB, ... A plain `fromCharCode(65 + n)`
+ * walks off the ASCII alphabet as soon as the corpus exceeds 26 sessions and
+ * writes unprintable characters into the evidence files.
+ */
+function aliasLabel(index) {
+  let n = index
+  let out = ''
+  do {
+    out = String.fromCharCode(65 + (n % 26)) + out
+    n = Math.floor(n / 26) - 1
+  } while (n >= 0)
+  return out
+}
+
 function aliasFor(id) {
-  if (!aliases.has(id)) aliases.set(id, `session-${String.fromCharCode(65 + aliases.size)}`)
+  if (!aliases.has(id)) aliases.set(id, `session-${aliasLabel(aliases.size)}`)
   return aliases.get(id)
 }
 

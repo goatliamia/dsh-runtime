@@ -1,57 +1,57 @@
 {"t":525,"kind":"fixture/boot","pid":20748,"jobsVisibleToUnscopedCaller":0}
-{"t":935,"kind":"agent/created","sessionId":"session-"}
-{"t":936,"kind":"agent-scope/registered","scopeSessionId":"session-"}
-{"t":938,"kind":"app/parent-session","sessionId":"session-","provider":"deepseek-official","model":"deepseek-v4.1-flash-expires-on-0910","cwd":"<HOME>\\Documents"}
+{"t":935,"kind":"agent/created","sessionId":"session-BT"}
+{"t":936,"kind":"agent-scope/registered","scopeSessionId":"session-BT"}
+{"t":938,"kind":"app/parent-session","sessionId":"session-BT","provider":"deepseek-official","model":"deepseek-v4.1-flash-expires-on-0910","cwd":"<HOME>\\Documents"}
 {"t":939,"kind":"app/task","text":"You are the PARENT in a residency probe (W2: child parks with NO live child - negative control). Do EXACTLY this and nothing else.\n\n1. Call the subagent tool ONCE with these arguments:\n   - prompt: \"Reply with exactly the word C-OK and nothing else.\"\n   - description: \"W2 child\"\n   - run_in_background: true\n2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.\n3. Immediately end your turn. Your final message must be exactly: P-DONE"}
-{"t":942,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"user"},"text":"You are the PARENT in a residency probe (W2: child parks with NO live child - negative control). Do EXACTLY this and nothing else.\n\n1. Call the subagent tool ONCE with these arguments:\n   - prompt: \"Reply with exactly the word C-OK and nothing else.\"\n   - description: \"W2 child\"\n   - run_in_background: true\n2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.\n3. Immediately end your turn. Your final message must be exactly: P-DONE"}
-{"t":943,"kind":"agent/status","sessionId":"session-","status":"running"}
-{"t":944,"kind":"derived/state","sessionId":"session-","state":"running"}
-{"t":946,"kind":"session/turn-start","sessionId":"session-","isParent":true,"seq":4,"turn":1}
-{"t":948,"kind":"inbox/claimed","sessionId":"session-","turn":1,"source":{"kind":"user"},"text":"You are the PARENT in a residency probe (W2: child parks with NO live child - negative control). Do EXACTLY this and nothing else.\n\n1. Call the subagent tool ONCE with these arguments:\n   - prompt: \"Reply with exactly the word C-OK and nothing else.\"\n   - description: \"W2 child\"\n   - run_in_background: true\n2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.\n3. Immediately end your turn. Your final message must be exactly: P-DONE"}
-{"t":1026,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":7,"source":{"kind":"user"},"text":"You are the PARENT in a residency probe (W2: child parks with NO live child - negative control). Do EXACTLY this and nothing else.\n\n1. Call the subagent tool ONCE with these arguments:\n   - prompt: \"Reply with exactly the word C-OK and nothing else.\"\n   - description: \"W2 child\"\n   - run_in_background: true\n2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.\n3. Immediately end your turn. Your final message must be exactly: P-DONE"}
-{"t":1030,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":8,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`)."}
-{"t":2112,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":14,"source":{"kind":"model","provider":"deepseek-official"},"text":""}
-{"t":2116,"kind":"session/tool-call","sessionId":"session-","isParent":true,"seq":15,"name":"subagent"}
-{"t":2151,"kind":"agent/created","sessionId":"session-"}
-{"t":2152,"kind":"agent-scope/registered","scopeSessionId":"session-"}
-{"t":2153,"kind":"subagent/start","provider":"spawn","childId":"session-","runId":"session-","local":true}
-{"t":2154,"kind":"agent-scope/subagent-start","scopeSessionId":"session-","provider":"spawn","childId":"session-"}
-{"t":2155,"kind":"derived/state","sessionId":"session-","state":"idle"}
-{"t":2157,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"user"},"text":"Reply with exactly the word C-OK and nothing else.Your parent agent id is \"session-\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn."}
-{"t":2158,"kind":"agent/status","sessionId":"session-","status":"running"}
-{"t":2158,"kind":"derived/state","sessionId":"session-","state":"running"}
-{"t":2159,"kind":"session/turn-start","sessionId":"session-","isParent":false,"seq":5,"turn":1}
-{"t":2160,"kind":"inbox/claimed","sessionId":"session-","turn":1,"source":{"kind":"user"},"text":"Reply with exactly the word C-OK and nothing else.Your parent agent id is \"session-\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn."}
-{"t":2165,"kind":"session/tool-result","sessionId":"session-","isParent":true,"seq":16,"text":"started subagent session-"}
-{"t":2210,"kind":"session/user-message","sessionId":"session-","isParent":false,"seq":8,"source":{"kind":"user"},"text":"Reply with exactly the word C-OK and nothing else.Your parent agent id is \"session-\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn."}
-{"t":2212,"kind":"session/user-message","sessionId":"session-","isParent":false,"seq":9,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`).\n\nYou are a delegated subagent: your permission scope was fixed when you were started and cannot be widened from inside this session — operations that require approval are rejected automatically. When the task ...[truncated]"}
-{"t":2640,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":19,"source":{"kind":"model","provider":"deepseek-official"},"text":"P-DONE"}
-{"t":2642,"kind":"session/turn-end","sessionId":"session-","isParent":true,"seq":21,"turn":1,"reason":"completed"}
-{"t":2644,"kind":"agent/status","sessionId":"session-","status":"idle"}
-{"t":2645,"kind":"derived/state","sessionId":"session-","state":"waiting"}
+{"t":942,"kind":"inbox/inserted","sessionId":"session-BT","source":{"kind":"user"},"text":"You are the PARENT in a residency probe (W2: child parks with NO live child - negative control). Do EXACTLY this and nothing else.\n\n1. Call the subagent tool ONCE with these arguments:\n   - prompt: \"Reply with exactly the word C-OK and nothing else.\"\n   - description: \"W2 child\"\n   - run_in_background: true\n2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.\n3. Immediately end your turn. Your final message must be exactly: P-DONE"}
+{"t":943,"kind":"agent/status","sessionId":"session-BT","status":"running"}
+{"t":944,"kind":"derived/state","sessionId":"session-BT","state":"running"}
+{"t":946,"kind":"session/turn-start","sessionId":"session-BT","isParent":true,"seq":4,"turn":1}
+{"t":948,"kind":"inbox/claimed","sessionId":"session-BT","turn":1,"source":{"kind":"user"},"text":"You are the PARENT in a residency probe (W2: child parks with NO live child - negative control). Do EXACTLY this and nothing else.\n\n1. Call the subagent tool ONCE with these arguments:\n   - prompt: \"Reply with exactly the word C-OK and nothing else.\"\n   - description: \"W2 child\"\n   - run_in_background: true\n2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.\n3. Immediately end your turn. Your final message must be exactly: P-DONE"}
+{"t":1026,"kind":"session/user-message","sessionId":"session-BT","isParent":true,"seq":7,"source":{"kind":"user"},"text":"You are the PARENT in a residency probe (W2: child parks with NO live child - negative control). Do EXACTLY this and nothing else.\n\n1. Call the subagent tool ONCE with these arguments:\n   - prompt: \"Reply with exactly the word C-OK and nothing else.\"\n   - description: \"W2 child\"\n   - run_in_background: true\n2. Do NOT call list_agents, send_message, interrupt_agent, or any wait/check tool.\n3. Immediately end your turn. Your final message must be exactly: P-DONE"}
+{"t":1030,"kind":"session/user-message","sessionId":"session-BT","isParent":true,"seq":8,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`)."}
+{"t":2112,"kind":"session/assistant-message","sessionId":"session-BT","isParent":true,"seq":14,"source":{"kind":"model","provider":"deepseek-official"},"text":""}
+{"t":2116,"kind":"session/tool-call","sessionId":"session-BT","isParent":true,"seq":15,"name":"subagent"}
+{"t":2151,"kind":"agent/created","sessionId":"session-BU"}
+{"t":2152,"kind":"agent-scope/registered","scopeSessionId":"session-BU"}
+{"t":2153,"kind":"subagent/start","provider":"spawn","childId":"session-BU","runId":"session-BV","local":true}
+{"t":2154,"kind":"agent-scope/subagent-start","scopeSessionId":"session-BT","provider":"spawn","childId":"session-BU"}
+{"t":2155,"kind":"derived/state","sessionId":"session-BU","state":"idle"}
+{"t":2157,"kind":"inbox/inserted","sessionId":"session-BU","source":{"kind":"user"},"text":"Reply with exactly the word C-OK and nothing else.Your parent agent id is \"session-BT\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-BT\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn."}
+{"t":2158,"kind":"agent/status","sessionId":"session-BU","status":"running"}
+{"t":2158,"kind":"derived/state","sessionId":"session-BU","state":"running"}
+{"t":2159,"kind":"session/turn-start","sessionId":"session-BU","isParent":false,"seq":5,"turn":1}
+{"t":2160,"kind":"inbox/claimed","sessionId":"session-BU","turn":1,"source":{"kind":"user"},"text":"Reply with exactly the word C-OK and nothing else.Your parent agent id is \"session-BT\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-BT\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn."}
+{"t":2165,"kind":"session/tool-result","sessionId":"session-BT","isParent":true,"seq":16,"text":"started subagent session-BU"}
+{"t":2210,"kind":"session/user-message","sessionId":"session-BU","isParent":false,"seq":8,"source":{"kind":"user"},"text":"Reply with exactly the word C-OK and nothing else.Your parent agent id is \"session-BT\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-BT\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn."}
+{"t":2212,"kind":"session/user-message","sessionId":"session-BU","isParent":false,"seq":9,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`).\n\nYou are a delegated subagent: your permission scope was fixed when you were started and cannot be widened from inside this session — operations that require approval are rejected automatically. When the task ...[truncated]"}
+{"t":2640,"kind":"session/assistant-message","sessionId":"session-BT","isParent":true,"seq":19,"source":{"kind":"model","provider":"deepseek-official"},"text":"P-DONE"}
+{"t":2642,"kind":"session/turn-end","sessionId":"session-BT","isParent":true,"seq":21,"turn":1,"reason":"completed"}
+{"t":2644,"kind":"agent/status","sessionId":"session-BT","status":"idle"}
+{"t":2645,"kind":"derived/state","sessionId":"session-BT","state":"waiting"}
 {"t":2648,"kind":"app/first-idle","parentTurnStarts":1,"subagentEnds":0,"jobDone":0,"status":"idle"}
-{"t":3189,"kind":"session/assistant-message","sessionId":"session-","isParent":false,"seq":13,"source":{"kind":"model","provider":"deepseek-official"},"text":"C-OK"}
-{"t":3191,"kind":"session/tool-call","sessionId":"session-","isParent":false,"seq":14,"name":"send_message"}
-{"t":3200,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"agent-message","form":"relay","senderSessionId":"session-"},"text":"Agent session- sent a message: C-OK"}
-{"t":3200,"kind":"agent/status","sessionId":"session-","status":"running"}
-{"t":3201,"kind":"derived/state","sessionId":"session-","state":"running"}
-{"t":3202,"kind":"session/turn-start","sessionId":"session-","isParent":true,"seq":23,"turn":2}
-{"t":3203,"kind":"inbox/claimed","sessionId":"session-","turn":2,"source":{"kind":"agent-message","form":"relay","senderSessionId":"session-"},"text":"Agent session- sent a message: C-OK"}
-{"t":3206,"kind":"session/tool-result","sessionId":"session-","isParent":false,"seq":15,"text":"message delivered to agent session-"}
-{"t":3225,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":26,"source":{"kind":"agent-message","form":"relay","senderSessionId":"session-"},"text":"Agent session- sent a message: C-OK"}
-{"t":3542,"kind":"session/assistant-message","sessionId":"session-","isParent":false,"seq":18,"source":{"kind":"model","provider":"deepseek-official"},"text":"C-OK"}
-{"t":3543,"kind":"session/turn-end","sessionId":"session-","isParent":false,"seq":20,"turn":1,"reason":"completed"}
-{"t":3545,"kind":"agent/status","sessionId":"session-","status":"idle"}
-{"t":3545,"kind":"derived/state","sessionId":"session-","state":"idle"}
-{"t":3568,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"subagent-settled","form":"notice","senderSessionId":"session-"},"text":"Background subagent session- finished and will do no further work unless you send it more.Its closing message:C-OK"}
-{"t":3569,"kind":"subagent/end","provider":"spawn","childId":"session-","runId":"session-","local":true,"stopReason":"completed","lastAssistantMessage":"C-OK"}
-{"t":3570,"kind":"derived/state","sessionId":"session-","state":"settled"}
-{"t":3570,"kind":"agent-scope/subagent-end","scopeSessionId":"session-","provider":"spawn","childId":"session-","stopReason":"completed","lastAssistantMessage":"C-OK"}
-{"t":3824,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":28,"source":{"kind":"model","provider":"deepseek-official"},"text":"P-DONE"}
-{"t":3826,"kind":"inbox/claimed","sessionId":"session-","turn":2,"source":{"kind":"subagent-settled","form":"notice","senderSessionId":"session-"},"text":"Background subagent session- finished and will do no further work unless you send it more.Its closing message:C-OK"}
-{"t":3854,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":32,"source":{"kind":"subagent-settled","form":"notice","senderSessionId":"session-"},"text":"Background subagent session- finished and will do no further work unless you send it more.Its closing message:C-OK"}
-{"t":4722,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":33,"source":{"kind":"model","provider":"deepseek-official"},"text":"P-DONE"}
-{"t":4723,"kind":"session/turn-end","sessionId":"session-","isParent":true,"seq":35,"turn":2,"reason":"completed"}
-{"t":4725,"kind":"agent/status","sessionId":"session-","status":"idle"}
-{"t":4725,"kind":"derived/state","sessionId":"session-","state":"idle"}
+{"t":3189,"kind":"session/assistant-message","sessionId":"session-BU","isParent":false,"seq":13,"source":{"kind":"model","provider":"deepseek-official"},"text":"C-OK"}
+{"t":3191,"kind":"session/tool-call","sessionId":"session-BU","isParent":false,"seq":14,"name":"send_message"}
+{"t":3200,"kind":"inbox/inserted","sessionId":"session-BT","source":{"kind":"agent-message","form":"relay","senderSessionId":"session-BU"},"text":"Agent session-BU sent a message: C-OK"}
+{"t":3200,"kind":"agent/status","sessionId":"session-BT","status":"running"}
+{"t":3201,"kind":"derived/state","sessionId":"session-BT","state":"running"}
+{"t":3202,"kind":"session/turn-start","sessionId":"session-BT","isParent":true,"seq":23,"turn":2}
+{"t":3203,"kind":"inbox/claimed","sessionId":"session-BT","turn":2,"source":{"kind":"agent-message","form":"relay","senderSessionId":"session-BU"},"text":"Agent session-BU sent a message: C-OK"}
+{"t":3206,"kind":"session/tool-result","sessionId":"session-BU","isParent":false,"seq":15,"text":"message delivered to agent session-BT"}
+{"t":3225,"kind":"session/user-message","sessionId":"session-BT","isParent":true,"seq":26,"source":{"kind":"agent-message","form":"relay","senderSessionId":"session-BU"},"text":"Agent session-BU sent a message: C-OK"}
+{"t":3542,"kind":"session/assistant-message","sessionId":"session-BU","isParent":false,"seq":18,"source":{"kind":"model","provider":"deepseek-official"},"text":"C-OK"}
+{"t":3543,"kind":"session/turn-end","sessionId":"session-BU","isParent":false,"seq":20,"turn":1,"reason":"completed"}
+{"t":3545,"kind":"agent/status","sessionId":"session-BU","status":"idle"}
+{"t":3545,"kind":"derived/state","sessionId":"session-BU","state":"idle"}
+{"t":3568,"kind":"inbox/inserted","sessionId":"session-BT","source":{"kind":"subagent-settled","form":"notice","senderSessionId":"session-BU"},"text":"Background subagent session-BU finished and will do no further work unless you send it more.Its closing message:C-OK"}
+{"t":3569,"kind":"subagent/end","provider":"spawn","childId":"session-BU","runId":"session-BV","local":true,"stopReason":"completed","lastAssistantMessage":"C-OK"}
+{"t":3570,"kind":"derived/state","sessionId":"session-BU","state":"settled"}
+{"t":3570,"kind":"agent-scope/subagent-end","scopeSessionId":"session-BT","provider":"spawn","childId":"session-BU","stopReason":"completed","lastAssistantMessage":"C-OK"}
+{"t":3824,"kind":"session/assistant-message","sessionId":"session-BT","isParent":true,"seq":28,"source":{"kind":"model","provider":"deepseek-official"},"text":"P-DONE"}
+{"t":3826,"kind":"inbox/claimed","sessionId":"session-BT","turn":2,"source":{"kind":"subagent-settled","form":"notice","senderSessionId":"session-BU"},"text":"Background subagent session-BU finished and will do no further work unless you send it more.Its closing message:C-OK"}
+{"t":3854,"kind":"session/user-message","sessionId":"session-BT","isParent":true,"seq":32,"source":{"kind":"subagent-settled","form":"notice","senderSessionId":"session-BU"},"text":"Background subagent session-BU finished and will do no further work unless you send it more.Its closing message:C-OK"}
+{"t":4722,"kind":"session/assistant-message","sessionId":"session-BT","isParent":true,"seq":33,"source":{"kind":"model","provider":"deepseek-official"},"text":"P-DONE"}
+{"t":4723,"kind":"session/turn-end","sessionId":"session-BT","isParent":true,"seq":35,"turn":2,"reason":"completed"}
+{"t":4725,"kind":"agent/status","sessionId":"session-BT","status":"idle"}
+{"t":4725,"kind":"derived/state","sessionId":"session-BT","state":"idle"}
 {"t":27781,"kind":"app/hold-end","outcome":"resumed","exitOn":"none","parentTurnStarts":2,"subagentStarts":1,"subagentEnds":1,"jobDone":0,"jobChanged":0,"status":"idle"}
