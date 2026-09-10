@@ -65,6 +65,26 @@ seq 22  assistant/message  "CONTINUED-A"   ← loop 自己跑的下一步
 - **注入不会顶掉模型基于证据的判断**——它敢对 runtime 说"不"（这是安全侧的强信号）；
 - **但一致性的注入是纯浪费**，冲突的注入要额外交学费（见下）。
 
+### 3.1 补测：同一句反事实，早注入 vs 晚注入（c4 vs c2）
+
+loop 的认领周期（`:931-975`）说明：**只要回合还在跑，`tools/result` 之后注入就会在下一次 `preStep` 被认领，同一轮继续——根本不需要 turn-stopping**。补一组对照验证：
+
+| case | 注入时机 | 模型输出 |
+|---|---|---|
+| c2 | **收尾点**（模型已说出 `VERDICT-PASS`） | **两个回答**：先说 PASS，再被迫**撤回**（"I can't state that verdict…"） |
+| c4 | **回合内**（工具结果之后、模型尚未表态） | **一个回答**：直接不说错话（"I checked again against what actually came back… I can't state VERDICT-FAIL honestly"） |
+
+成本（同一条观测、同一模型、同一配置）：
+
+| case | 请求数 | fresh input | cacheRead | cacheWrite | output | reasoning | 合计 |
+|---|---|---|---|---|---|---|---|
+| c1 对照 | 2 | 393 | 15,232 | 0 | 70 | 0 | 15,695 |
+| c2 收尾注入 | **3** | 607 | 22,912 | 0 | 679 | 375 | **24,198** |
+| c4 回合内提前注入 | **2** | 425 | 15,232 | 0 | 732 | 417 | **16,389** |
+
+→ **提前注入少一次往返、少约 7,800 token，并且模型不需要撤回自己刚说的话。**
+→ `cacheWrite=0` 在三种时机下都成立：**注入本身从不破坏前缀**。
+
 ## 4. 成本（trace 不给，逐帧解 `session.v3.jsonl.zstd` 算的）
 
 ### 4.1 续跑本身（t1 vs t2）
@@ -121,9 +141,39 @@ deepseek-flash                      → systemPromptUpdate = null           ← 
 turn-stopping = 合法的续跑点（不是免模型的一跳）
   注入 → 同一轮继续跑一步（user-role，loop 自记录）
   抛错 → 这一轮显性失败（error），不会假装正常收尾
-
-注入的行为代价是可计量的：
-  冲突 → 模型会顶回来，但 reasoning 涨（150 vs 0）
-  一致 → 模型只是复述，纯浪费
-  ⇒ 只在"runtime 拥有模型拿不到的事实"时注入
 ```
+
+### 7.1 它的生态位（本报告最重要的"减价"结论）
+
+loop 每一步都会 `preStep(target)` 认领 `next-step`（`:931-975`），所以：
+
+> **只要回合还在跑，在 `tools/result` 之后注入就够了——同一轮继续，不需要 turn-stopping。**
+
+`turn-stopping` 唯一的用武之地是：
+
+```text
+模型的最后一步没有工具调用（它认为自己说完了）
+→ turnEnds 已置位，回合正要收尾
+→ 而 runtime 认为"还没完"
+```
+
+即 **"模型说完了、但 runtime 不同意"**（`post-write-syntax-check` 那一类）。
+配 c2/c4 的实测：**能早注入就早注入**——晚一步要多花一次往返 + 让模型自我撤回。
+
+### 7.2 注入的行为代价（可计量）
+
+```text
+冲突 → 模型会顶回来，但 reasoning 涨（375 vs 0）
+一致 → 模型只是复述，纯浪费一步
+⇒ 只在"runtime 拥有模型拿不到的事实、且确实还没完"时注入
+```
+
+### 7.3 与事前（Pre）设计的关系
+
+Pre 设计有两块：**(i) runtime 自己执行那个确定性动作**（不需要任何续跑挂点，插件自己做就行）；
+**(ii) 让模型在流程里消化它**——turn-stopping 解决的正是 (ii)，而且是**合法地**：
+
+> 旧 Pre 线想**替模型说话**（伪造 assistant，导致会话损坏）；
+> turn-stopping 只**让模型继续说**（注入 user-role，下一步由 loop 生成并记录）。
+
+**它不解决 `docs/19` 第 9 项（完全免模型的一跳）**——那仍然需要上游 `agent/continue`。

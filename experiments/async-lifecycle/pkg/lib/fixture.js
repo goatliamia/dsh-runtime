@@ -31,25 +31,40 @@ export function apply(ctx) {
   // finish. Nothing is forged: the injected message is user-role with a plugin
   // source, and the next step is generated and logged by the loop itself.
   const tsMode = process.env.SPIKE_TS
-  if (tsMode === 'inject' || tsMode === 'throw') {
+  if (tsMode === 'inject' || tsMode === 'throw' || tsMode === 'inject-early') {
     const injected = new Set()
-    ctx.on('agent/turn-stopping', ({ agent, turn }) => {
+    const injectOnce = (agent, turn, kind) => {
       const sessionId = sessionIdOf(agent)
       // Only the primary conversation participates; children have their own turns.
       if (sessionId === undefined || sessionId !== state.parentSessionId) return
-      if (tsMode === 'throw') {
-        record('ts/throw', { sessionId, turn })
-        throw new Error('runtime-observation: a required check has not run')
-      }
       if (injected.has(sessionId)) return
       injected.add(sessionId)
       const text = process.env.SPIKE_TS_TEXT ?? 'Runtime observation: a required check has not run yet.'
-      record('ts/inject', { sessionId, turn, text })
+      record(kind, { sessionId, turn, text })
       agent.inject(createUserMessage({
         content: [{ type: 'text', text }],
         source: { kind: 'plugin', plugin: 'async-spike-fixture', form: 'notice', summary: 'runtime observation' },
       }))
-    })
+    }
+    if (tsMode === 'inject-early') {
+      // Deliver the SAME observation, but while the turn is still running: a
+      // tool result is a step-internal boundary, so the loop claims the message
+      // at the next step and the turn continues with no checkpoint needed.
+      ctx.on('tools/result', (exec) => {
+        if (exec?.agent === undefined) return
+        injectOnce(exec.agent, undefined, 'ts/inject-early')
+      })
+    } else {
+      ctx.on('agent/turn-stopping', ({ agent, turn }) => {
+        const sessionId = sessionIdOf(agent)
+        if (sessionId === undefined || sessionId !== state.parentSessionId) return
+        if (tsMode === 'throw') {
+          record('ts/throw', { sessionId, turn })
+          throw new Error('runtime-observation: a required check has not run')
+        }
+        injectOnce(agent, turn, 'ts/inject')
+      })
+    }
   }
 
   // Phase 3: the residency state a THIRD PARTY can derive from official facts.
