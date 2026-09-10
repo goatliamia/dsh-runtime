@@ -8,6 +8,7 @@
 
 import { record, sourceOf, sessionIdOf, state, textOf } from './state.js'
 import { recordEnd, recordStart, recordStatus, watchDerived } from './facts.js'
+import { createUserMessage } from '@deepseek-ai/dsh-llm'
 
 export const name = 'async-spike-fixture'
 export const inject = ['jobs']
@@ -19,6 +20,37 @@ export function apply(ctx) {
     pid: process.pid,
     jobsVisibleToUnscopedCaller: jobs.list().length,
   })
+
+  // Phase 4 probe: the LEGAL turn-extension route.
+  //
+  // `agent/turn-stopping` is an emit checkpoint the loop runs immediately before
+  // it would end the turn (only when no next-step work is pending), and it then
+  // RE-CHECKS `inbox.nextStep.length`. `agent.inject()` appends to exactly that
+  // list, so injecting here makes the turn continue with a normal loop-owned
+  // step. Throwing instead makes the turn end as `error` rather than as a clean
+  // finish. Nothing is forged: the injected message is user-role with a plugin
+  // source, and the next step is generated and logged by the loop itself.
+  const tsMode = process.env.SPIKE_TS
+  if (tsMode === 'inject' || tsMode === 'throw') {
+    const injected = new Set()
+    ctx.on('agent/turn-stopping', ({ agent, turn }) => {
+      const sessionId = sessionIdOf(agent)
+      // Only the primary conversation participates; children have their own turns.
+      if (sessionId === undefined || sessionId !== state.parentSessionId) return
+      if (tsMode === 'throw') {
+        record('ts/throw', { sessionId, turn })
+        throw new Error('runtime-observation: a required check has not run')
+      }
+      if (injected.has(sessionId)) return
+      injected.add(sessionId)
+      const text = process.env.SPIKE_TS_TEXT ?? 'Runtime observation: a required check has not run yet.'
+      record('ts/inject', { sessionId, turn, text })
+      agent.inject(createUserMessage({
+        content: [{ type: 'text', text }],
+        source: { kind: 'plugin', plugin: 'async-spike-fixture', form: 'notice', summary: 'runtime observation' },
+      }))
+    })
+  }
 
   // Phase 3: the residency state a THIRD PARTY can derive from official facts.
   ctx.effect(() => watchDerived((sessionId, derivedState) => {

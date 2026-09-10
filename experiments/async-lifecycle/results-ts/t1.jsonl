@@ -1,0 +1,18 @@
+{"t":214,"kind":"fixture/boot","pid":9648,"jobsVisibleToUnscopedCaller":0}
+{"t":645,"kind":"agent/created","sessionId":"session-"}
+{"t":646,"kind":"agent-scope/registered","scopeSessionId":"session-"}
+{"t":648,"kind":"app/parent-session","sessionId":"session-","provider":"deepseek-official","model":"deepseek-v4.1-flash-expires-on-0910","cwd":"<HOME>\\Documents"}
+{"t":649,"kind":"app/task","text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":651,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":653,"kind":"agent/status","sessionId":"session-","status":"running"}
+{"t":653,"kind":"derived/state","sessionId":"session-","state":"running"}
+{"t":655,"kind":"session/turn-start","sessionId":"session-","isParent":true,"seq":4,"turn":1}
+{"t":657,"kind":"inbox/claimed","sessionId":"session-","turn":1,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":743,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":8,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":745,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":9,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`)."}
+{"t":1645,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":15,"source":{"kind":"model","provider":"deepseek-official"},"text":"DONE-A"}
+{"t":1647,"kind":"session/turn-end","sessionId":"session-","isParent":true,"seq":17,"turn":1,"reason":"completed"}
+{"t":1650,"kind":"agent/status","sessionId":"session-","status":"idle"}
+{"t":1651,"kind":"derived/state","sessionId":"session-","state":"idle"}
+{"t":1654,"kind":"app/first-idle","parentTurnStarts":1,"subagentEnds":0,"jobDone":0,"status":"idle"}
+{"t":13672,"kind":"app/hold-end","outcome":"timeout","exitOn":"none","parentTurnStarts":1,"subagentStarts":0,"subagentEnds":0,"jobDone":0,"jobChanged":0,"status":"idle"}

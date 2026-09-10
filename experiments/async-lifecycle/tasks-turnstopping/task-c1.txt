@@ -1,0 +1,2 @@
+Call the pwsh tool ONCE with command: Write-Output CHECK-PASS
+Then reply with exactly VERDICT-PASS and end your turn. Do not call any other tool.

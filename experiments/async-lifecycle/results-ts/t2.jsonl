@@ -1,0 +1,23 @@
+{"t":203,"kind":"fixture/boot","pid":16880,"jobsVisibleToUnscopedCaller":0}
+{"t":623,"kind":"agent/created","sessionId":"session-"}
+{"t":624,"kind":"agent-scope/registered","scopeSessionId":"session-"}
+{"t":627,"kind":"app/parent-session","sessionId":"session-","provider":"deepseek-official","model":"deepseek-v4.1-flash-expires-on-0910","cwd":"<HOME>\\Documents"}
+{"t":628,"kind":"app/task","text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":631,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":635,"kind":"agent/status","sessionId":"session-","status":"running"}
+{"t":636,"kind":"derived/state","sessionId":"session-","state":"running"}
+{"t":638,"kind":"session/turn-start","sessionId":"session-","isParent":true,"seq":4,"turn":1}
+{"t":640,"kind":"inbox/claimed","sessionId":"session-","turn":1,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":729,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":8,"source":{"kind":"user"},"text":"Reply with exactly the word DONE-A and nothing else. Do not call any tool."}
+{"t":731,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":9,"source":{"kind":"plugin","form":"snapshot","plugin":"@deepseek-ai/dsh-system-prompt"},"text":"Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\nCurrent DSH file policy: danger-full-access. The DSH file sandbox does not restrict file modifications by available operations.\n\nApproval prompts are disabled in this session: actions that require approval are rejected automatically — do not request sandbox escalation (do not set `sandbox_permissions`)."}
+{"t":1578,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":15,"source":{"kind":"model","provider":"deepseek-official"},"text":"DONE-A"}
+{"t":1581,"kind":"ts/inject","sessionId":"session-","turn":1,"text":"Runtime observation: a required check has not run yet. Reply with exactly CONTINUED-A and then end your turn."}
+{"t":1583,"kind":"inbox/inserted","sessionId":"session-","source":{"kind":"plugin","form":"notice","plugin":"async-spike-fixture"},"text":"Runtime observation: a required check has not run yet. Reply with exactly CONTINUED-A and then end your turn."}
+{"t":1584,"kind":"inbox/claimed","sessionId":"session-","turn":1,"source":{"kind":"plugin","form":"notice","plugin":"async-spike-fixture"},"text":"Runtime observation: a required check has not run yet. Reply with exactly CONTINUED-A and then end your turn."}
+{"t":1616,"kind":"session/user-message","sessionId":"session-","isParent":true,"seq":20,"source":{"kind":"plugin","form":"notice","plugin":"async-spike-fixture"},"text":"Runtime observation: a required check has not run yet. Reply with exactly CONTINUED-A and then end your turn."}
+{"t":2973,"kind":"session/assistant-message","sessionId":"session-","isParent":true,"seq":21,"source":{"kind":"model","provider":"deepseek-official"},"text":"CONTINUED-A"}
+{"t":2975,"kind":"session/turn-end","sessionId":"session-","isParent":true,"seq":23,"turn":1,"reason":"completed"}
+{"t":2977,"kind":"agent/status","sessionId":"session-","status":"idle"}
+{"t":2978,"kind":"derived/state","sessionId":"session-","state":"idle"}
+{"t":2981,"kind":"app/first-idle","parentTurnStarts":1,"subagentEnds":0,"jobDone":0,"status":"idle"}
+{"t":15114,"kind":"app/hold-end","outcome":"timeout","exitOn":"none","parentTurnStarts":1,"subagentStarts":0,"subagentEnds":0,"jobDone":0,"jobChanged":0,"status":"idle"}
