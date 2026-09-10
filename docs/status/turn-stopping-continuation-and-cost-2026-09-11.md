@@ -276,14 +276,57 @@ loop 每一步都会 `preStep(target)` 认领 `next-step`（`:931-975`），所�
 
 | 能力 | 今天只能 | 有了 turn-stopping 之后 |
 |---|---|---|
-| `runtime-circuit` | 停掉工具、把判断交给**人** | 同一个判断也能到**模型**手里（"为什么停"而不是只有"停了"） |
-| `runtime-investigate` | 回合结束后再补一轮（新回合 = 打断） | 在同一回合内提出待查项，不产生新回合 |
-| `runtime-reconcile` | 对账结论只能留在 runtime 侧 | 不一致可以当场要求模型对齐 |
-| `dsh-notify` | 回合结束即视为"等用户输入" | 被续跑的回合不算结束，通知更准（少一次误报） |
+| `runtime-circuit` | 已经把判断**写在工具结果里**给模型看（`guardFn` 返回 reason，且自报 `promptEdits: 0`） | 不需要它——再注入一遍就是 c3/c5 那种"白买一步" |
+| `runtime-investigate` | **已经在注入**（见 §7.2.3） | 只在"事实出现在最后一步"那个残窗里才有增量 |
+| `runtime-reconcile` | 结论留在 runtime 侧 | 若确实需要模型对齐，可走同一挂点 |
+| `dsh-notify` | 不需要任何改动 | `turn/end` 在整轮真正结束时**只发一次**（c5 实测：8 次注入之后只有一个 `turn/end`），所以下游信号本来就是对的，续跑只是把它**推迟**，不是修正它 |
 
-代价是：这些能力一旦都开始注入，§4.3 的账单就是**它们共同的账单**，而且没有任何平台护栏。
-所以如果要用，护栏应当由**我们这层**提供（例如一个统一的"待办事实"入口，
-自带去重、自带上限、自带"没越过阈值就不注入"），而不是每个插件各自 `agent.inject()` 裸调。
+（更正：本节早先把"通知更准"写成收益，实测不成立——`turn/end` 没有被提前触发过，也没有被多次触发。）
+
+### 7.2.3 两个注入通道，以及谁该用哪个
+
+**主通道是 `agent/pre-step`，不是 turn-stopping。** 它是一个 waterfall，默认决策是
+`{ kind: "enter", messages: claimed }`（`dsh-agent-loop/lib/index.js:894-901`），
+监听者可以往 `decision.messages` 里追加一条 user-role 插件消息——**loop 会把它当成自己这一步的消息照常记录**，
+不需要 turn-stopping，也不需要伪造任何东西。
+
+`runtime-investigate` **已经在这么做**（`core/runtime-investigate/lib/index.js:87-130`），
+而且它已经带着我们说要"补"的那套纪律：
+
+```js
+if (injected.has(contract.id)) continue;        // 去重：同一个事实只说一次
+const results = matchedResults(contract);       // 阈值：契约命中
+const success = results.find((r) => !r.isError) // 阈值：成功但效果未被事件流确认
+if (!success) continue;
+injected.add(contract.id);
+interventions.push({ at, kind, evidence });      // 留证据
+// → 追加 user-role 消息，source: {kind:'plugin', plugin:'dsh-runtime-investigate'}
+```
+
+> ⇒ "统一入口 + 去重 + 上限 + 阈值"**不是待补的抽象，它已经在唯一需要它的插件里**。
+> 现在再抽一层框架，是把能跑的判据重写成框架，而不是补缺口。
+
+所以两个通道的分工是：
+
+| 通道 | 何时用 | 现状 |
+|---|---|---|
+| `agent/pre-step` | 事实在**回合还在跑**的时候就已经拿到 | 已在用；这是默认选择 |
+| `agent/turn-stopping` | 事实出现在**最后一步**、loop 正要离开（`turnEnds` 已置位、`nextStep` 为空） | **残窗**——此时不会再有下一次 `preStep` |
+
+残窗是真的：`:973` 一 break，`preStep` 就不再被调用，所以一个"最后一步才浮现的事实"在主通道里**没有机会被说出去**。
+但它也是一个很窄的窗口，而且**晚说一步要付 c2 那份学费**（1.54×，且模型是在自己已经说完之后被要求改口）。
+
+开这个残窗的判据（机械的，不需要问模型）：
+
+```text
+1. runtime 手里有一条模型没收到过的观测（可在事件流里举证）
+2. 这条观测会改变"下一步该做什么"
+3. 模型已经收尾（turnEnds 已置位），主通道不再有机会
+4. 在此之前没有说过（去重集合）
+⇒ 四条全成立才注入；任何一条不成立，沉默
+```
+
+第 4 条是**上限**的位置：没有平台护栏，去重集合 + 一个显式 cap 就是全部的刹车（c5/c6 里 `ALWAYS_CAP = 8` 是唯一让 `turn/end` 出现的东西）。
 
 ### 7.3 与事前（Pre）设计的关系
 
