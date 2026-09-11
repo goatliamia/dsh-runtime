@@ -1,7 +1,7 @@
 # Turn Continuation & Injection Mechanism
 
 - 状态：**reference**（2026-09-11）——机制参考，不是实验报告
-- 适用：DSH `0.1.5-rc.1` 实测；关键行号与 `0.1.3-alpha.2` 一致
+- 适用：DSH `0.1.5-rc.1` 实测；`0.1.5-rc.2` 复核，**本文引用的行号全部未变**（`:783`/`:792`/`:885`/`:899`/`:934`/`:966`/`:973`、README `:200`、`dsh-tool-fs` `:547-548`）
 - 原始实验与逐条结论：`docs/status/turn-stopping-continuation-and-cost-2026-09-11.md`
 - 证据：`experiments/async-lifecycle/results-ts`（t1–t3）、`results-conflict`（c1–c6）
 - 本文件只描述**平台既有机制**与**我们量出来的使用判据**，不引入任何 DSH core 改动

@@ -2,6 +2,7 @@
 
 - 状态：**已闭环**（源码四claim + 3 组实验：续跑/冲突/硬注入 + 成本计量 + 一个 settings 修复）
 - 环境：DSH **0.1.5-rc.1**（实验期间 live 已升级；会话日志为 `session.v3.jsonl.zstd`）
+  → **0.1.5-rc.2 复核**：`dsh-agent-loop` 的 `:934`/`:966`/`:973`、`steer`/`inject` `:783-796`、README `:200` 行号全部未变
 - 证据：`experiments/async-lifecycle/results-ts*`、`results-conflict`（c1–c6）
 - harness：`harness/run-turnstopping-par.ps1`、`run-ts-live.ps1`、`run-conflict-par.ps1`（`SPIKE_TS=inject-always` 为硬注入模式）、`analyze-ts.mjs`、`decode-usage.mjs`
 

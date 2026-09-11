@@ -2,7 +2,7 @@
 
 - 状态：**已实测 + 已修**（3 个 live 会话 + 修的过程中当场复发一次 + 单元级复现 + 26 条断言）
 - 触发：live 会话里出现 `[runtime-observation circuit-open] ... do not retry read/edit/write`
-- 环境：DSH `0.1.5-rc.1` + `dsh-runtime-seam`（web profile 实装版）
+- 环境：DSH `0.1.5-rc.1`（观测）→ `0.1.5-rc.2`（修复复核，`dsh-tool-fs` 的两个码位置未变）+ `dsh-runtime-seam`（web profile 实装版）
 - 证据：`~/.dsh/sessions/...`（trajectory 查询，见下）、`experiments/async-lifecycle/harness/circuit-fingerprint.mjs`、`core/runtime-seam/circuit.test.mjs`
 
 ---
