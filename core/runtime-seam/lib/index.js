@@ -21,6 +21,7 @@ import {
   resolvePreset,
   teachingReason,
 } from "./core.mjs";
+import { mountContinuation } from "./pre-continuation.mjs";
 
 export const name = "dsh-runtime-seam";
 export const inject = ["tools", "settings", "commands"];
@@ -501,4 +502,13 @@ export function apply(ctx, _config) {
       }),
     );
   }
+
+  // ---- PRE axis: the productized continuation engine (agent/pre-step) ----
+  // Mounted AFTER the delta hook above, so a delta injection always composes
+  // on top of a continuation digest. Safe to mount unconditionally: every
+  // hook reads isEnabled() live at each step.
+  mountContinuation(ctx, {
+    isEnabled: () => configNow().continuation === true,
+    recordActivity,
+  });
 }

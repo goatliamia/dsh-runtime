@@ -173,7 +173,10 @@ and measured in [`experiments/async-lifecycle/`](experiments/async-lifecycle/).
 
 When the facts and a declared contract compress the next step to exactly one deterministic action, the Runtime executes it directly — through the normal permission / guard / cancellation boundary — and the model only digests what already happened.
 
-When it is not certain, it never takes over. This capability is experimentally validated (see Evidence below) and ships with the upstream `agent/continue` seam.
+When it is not certain, it never takes over. The engine is productized inside `dsh-runtime-seam`
+(driven by the `continuation` settings bit) with the first daily contract, `post-write-syntax-check`:
+after the model writes/edits workspace JS modules, the runtime runs `node --check` on them and
+hands the model one digest. See [`docs/status/pre-productized-2026-09-03.md`](docs/status/pre-productized-2026-09-03.md).
 
 ---
 

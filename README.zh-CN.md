@@ -165,7 +165,9 @@ spawn  ->  wait  ->  query（读子代自己的轨迹）  ->  模型判断这意
 
 当事实与契约把下一步压缩到唯一确定动作时，Runtime 直接执行——走正常的权限 / 守卫 / 取消边界——模型只消化已经发生的结果。
 
-没有把握时一律不接管。该能力已经实验验证（见下方 Evidence），随上游 `agent/continue` seam 上线。
+没有把握时一律不接管。该引擎已产品化并入 `dsh-runtime-seam`（由 settings 的 `continuation` 位驱动），
+首发日常合同 `post-write-syntax-check`：模型写入/编辑工作区 JS 模块后，Runtime 对它们跑 `node --check`
+并给模型一条 digest。详见 [`docs/status/pre-productized-2026-09-03.md`](docs/status/pre-productized-2026-09-03.md)。
 
 ---
 

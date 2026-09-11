@@ -119,11 +119,12 @@ window.__ModuleLoader__.load({
 
     // ---- "这次帮你做了什么" (docs/18 §3 layer 3) ----
     function summaryOf(entries) {
-      const counts = { circuit: 0, guard: 0, delta: 0 };
+      const counts = { circuit: 0, guard: 0, delta: 0, continuation: 0 };
       for (const entry of entries ?? []) {
         if (counts[entry.kind] !== undefined) counts[entry.kind] += 1;
       }
       const parts = [];
+      if (counts.continuation > 0) parts.push(`executed ${counts.continuation} deterministic step(s)`);
       if (counts.circuit > 0) parts.push(`stopped ${counts.circuit} no-progress retry loop(s)`);
       if (counts.guard > 0) parts.push(`blocked ${counts.guard} invalid action(s)`);
       if (counts.delta > 0) parts.push(`notified ${counts.delta} committed change(s)`);
@@ -134,6 +135,8 @@ window.__ModuleLoader__.load({
       const time = new Date(entry.t).toLocaleTimeString();
       const kind = entry.kind;
       const name =
+        kind === "continuation" ? "Pre" :
+        kind === "continuation-ambiguous" ? "Pre·ambiguous" :
         kind === "guard" ? "Guard" :
         kind === "circuit" ? "Circuit" :
         kind === "delta" ? "Delta" :
@@ -143,7 +146,8 @@ window.__ModuleLoader__.load({
         kind === "goal-removed" ? "目标移除" :
         kind === "change" ? "Change" : kind;
       let body = null;
-      if (kind === "guard") body = el("div", { style: mono }, entry.action + " · rev " + entry.revision);
+      if (kind === "continuation") body = el("div", { style: mono }, (entry.action ?? "") + (entry.outcome ? " → " + entry.outcome : ""));
+      else if (kind === "guard") body = el("div", { style: mono }, entry.action + " · rev " + entry.revision);
       else if (kind === "circuit") body = el("div", { style: mono }, entry.tool + " 重复 " + entry.repeated + " 次 → " + entry.result);
       else if (kind === "delta") body = el("div", { style: mono }, entry.type + " " + (entry.path ?? ""));
       else if (kind === "goal") body = el("div", { style: mono }, entry.factPath + " → " + String(entry.desired) + "（" + (entry.state === "satisfied" ? "已满足" : "等待中") + "）");
@@ -190,7 +194,7 @@ window.__ModuleLoader__.load({
               style: { accentColor: "var(--dsw-alias-brand-primary)" },
             }))),
         el("div", { style: { ...secondary, marginTop: 6 } },
-          "实验验证中：能力随 agent/continue seam 上线（docs/status/runtime-continuation-*.md）。"));
+          "引擎已上线：代码文件 write/edit 后的语法检查等确定步骤由 Runtime 直接执行，模型只消化结果。合同表持续扩充（当前 v1：post-write-syntax-check）。"));
     }
 
     // ---- 设置页：事后模式 + 自定义勾选 ----
