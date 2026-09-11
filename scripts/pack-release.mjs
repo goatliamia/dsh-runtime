@@ -11,17 +11,23 @@
  *
  * Usage: node scripts/pack-release.mjs  (output: release/)
  */
-import { mkdirSync, rmSync, copyFileSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, copyFileSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { verifyRelease } from "./verify-release.mjs";
 
 const REPO = join(fileURLToPath(new URL("..", import.meta.url)));
 const OUT = join(REPO, "release");
 const PROGRESS_LIB = join(REPO, "core", "runtime-progress", "lib", "index.js");
 
-rmSync(OUT, { recursive: true, force: true });
+// Remove only what this script owns. A bare rmSync(OUT) also deleted artifacts
+// packed elsewhere -- it removed release/dsh-notify-0.1.0.tgz on 2026-09-11.
 mkdirSync(OUT, { recursive: true });
+for (const name of readdirSync(OUT)) {
+  if (name.startsWith("dsh-runtime") && name.endsWith(".tgz")) rmSync(join(OUT, name), { force: true });
+  else if (name.startsWith(".tmp-")) rmSync(join(OUT, name), { recursive: true, force: true });
+}
 
 function pack(cwd) {
   execSync("pnpm pack --pack-destination " + JSON.stringify(OUT), { cwd, stdio: "inherit" });
@@ -122,12 +128,30 @@ for (const pkg of ["runtime-circuit", "runtime-reconcile", "runtime-investigate"
     const lib = readFileSync(join(REPO, "core", pkg, "lib", "index.js"), "utf8");
     writeFileSync(join(tmp, "lib", pkg.replace("runtime-", ""), "index.js"), lib.replaceAll('from "dsh-runtime-progress"', 'from "../progress/index.js"'));
   }
-  copyFileSync(join(REPO, "core", "runtime-seam", "lib", "index.js"), join(tmp, "lib", "seam", "index.js"));
-  copyFileSync(join(REPO, "core", "runtime-seam", "lib", "core.mjs"), join(tmp, "lib", "seam", "core.mjs"));
-  copyFileSync(join(REPO, "core", "runtime-seam", "lib", "client.js"), join(tmp, "lib", "client.js"));
+  // The seam is the ONE module with sibling runtime files: index.js imports
+  // ./core.mjs and ./pre-continuation.mjs next to itself. Copying a fixed list
+  // shipped an umbrella whose seam threw ERR_MODULE_NOT_FOUND on load as soon
+  // as a sibling was added (pre-continuation.mjs, 2026-09-03). Copy the whole
+  // lib/ instead, and route client.js to the path package.json declares.
+  const seamLib = join(REPO, "core", "runtime-seam", "lib");
+  for (const entry of readdirSync(seamLib, { withFileTypes: true })) {
+    if (!entry.isFile() || entry.name === "client.js") continue;
+    copyFileSync(join(seamLib, entry.name), join(tmp, "lib", "seam", entry.name));
+  }
+  copyFileSync(join(seamLib, "client.js"), join(tmp, "lib", "client.js"));;
 
   pack(tmp);
   rmSync(tmp, { recursive: true, force: true });
 }
 
 console.log(`release tarballs written to ${OUT}`);
+
+// A tarball that imports a file it does not contain fails only at install time,
+// for whoever installs it. Check every packed tarball before declaring success.
+const { problems, tarballs, files } = verifyRelease(OUT);
+for (const problem of problems) console.error(`FAIL ${problem}`);
+if (problems.length > 0) {
+  console.error(`release pack FAILED: ${problems.length} unresolved relative import(s)`);
+  process.exit(1);
+}
+console.log(`verified ${tarballs} tarball(s), ${files} module(s): self-contained`);

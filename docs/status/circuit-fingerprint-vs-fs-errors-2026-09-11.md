@@ -1,9 +1,9 @@
 # 熔断指纹在文件工具上是坏的（2026-09-11）
 
-- 状态：**已实测**（3 个 live 会话 + 1 个单元级复现），**未修**
+- 状态：**已实测 + 已修**（3 个 live 会话 + 修的过程中当场复发一次 + 单元级复现 + 26 条断言）
 - 触发：live 会话里出现 `[runtime-observation circuit-open] ... do not retry read/edit/write`
 - 环境：DSH `0.1.5-rc.1` + `dsh-runtime-seam`（web profile 实装版）
-- 证据：`~/.dsh/sessions/...`（trajectory 查询，见下）、`async-spike/circuit-fingerprint.mjs`
+- 证据：`~/.dsh/sessions/...`（trajectory 查询，见下）、`experiments/async-lifecycle/harness/circuit-fingerprint.mjs`、`core/runtime-seam/circuit.test.mjs`
 
 ---
 
@@ -41,6 +41,23 @@ repeated identical failure detected; do not retry edit.
 | `…2896258a` | 1774 | **`write`** | `capabilities.write.state = "failed"` … `do not retry write` |
 | `…2896258a` | 4268 | **`read`** | `capabilities.read.state = "failed"` … **`do not retry read`** |
 | `…2896258a` | 2025 / 4460 | `edit` | 同第一条 |
+
+### 修的过程中当场复发（最干净的一次自然实验）
+
+写这份修复的时候，同一会话又触发一次——而且**触发条件被完整记录下来**：
+
+```text
+seq 3953  17:16:36  tool/result  edit → D:\projects\runtime\…\core.mjs
+                                 Error: cannot modify "…core.mjs": file has not been read — read the file, then retry
+seq 3998  17:17:13  tool/result  edit → C:\Users\…\Documents\async-spike\circuit-fingerprint.mjs
+                                 Error: cannot modify "…circuit-fingerprint.mjs": file has not been read — read the file, then retry
+seq 4001  17:17:13  user/message [runtime-observation circuit-open]
+                                 capabilities.edit.state = "failed" (fingerprint: 6ee78e566fcef37a)
+                                 repeated identical failure detected; do not retry edit.
+```
+
+**两个不同的文件、不同的盘、相隔 37 秒**，在指纹里是同一个"重复的同一失败"。这就是 F1+F2 的塌缩，在一次真实工作流里 1:1 复现。
+（同一指纹第三次出现也说明：`open` 不持久——插件每次重挂载都会清空，然后由下两次文件错误重新点数。）
 
 三个工具、三个指纹，**跨会话完全一致**（`edit` 恒为 `6ee78e566fcef37a`）——指纹里没有路径、没有错误文本。
 
@@ -97,22 +114,60 @@ seq 1145  tool/result Updated file                    ← 成功
 
 ---
 
-## 建议的修法（未实现）
+## 修法（已实现）
 
-1. **指纹要包含错误身份，而不只是工具。**
-   把回退分支从 `"generic-error"` 改为**归一化后的错误形态**：剥掉引号内的路径、压缩空白，再取指纹。
-   这样"同一个错误在两个文件上"仍算重复（对的），"读前写"和"锚点不存在"不再混为一谈（也是对的）。
-2. **文件协议错误整类豁免**，与 `[action-rejected]` 同一理由（F5）：
-   `FS_NOT_OBSERVED` / `FS_STALE_VERSION` 是**带解法的教学结果**，不是"无进展失败"。
-   判据可以机械地写在错误文本上（它自己就带 `FsError` + 大写码这两行）。
-3. **让通告与执行一致**：要么实现 F7 注释所声称的拒绝，要么把注释改成"announce-only，暂无执行"，不要让注释许诺一个不存在的行为。
+三处改动，全部在 `core/runtime-seam`，不引入新机制、不改架构：
 
-第 1、2 条合起来意味着：**文件工具永远不该开熔断**——它们的失败要么可自解，要么（权限/磁盘）会被模型自己报告。熔断留给真正会打转的能力（`exp_flaky` 那类）。
+### 1. 回退分支改成"归一化的错误形态"，不再是 `generic-error`
+
+`core.mjs` 新增 `errorShape()`：引号内的片段与绝对路径抹成 `<str>` / `<path>`，空白压缩。
+于是"同一个错误在两个文件上"仍算重复，"读前写"和"锚点不存在"不再混为一谈。
+
+### 2. 带解法的文件协议错误整类豁免（与 `[action-rejected]` 同一理由）
+
+`REMEDIATED_FS_CODES = { FS_NOT_OBSERVED, FS_STALE_VERSION }` ——这两个码**就是** DSH 用来表达"读了再重试"的
+（`dsh-tool-fs/lib/index.js:545-550`）。它们返回 `exempt: true`，**不计数**，只累加 `tracker.exempted` 供诊断。
+未知的 `FS_*`（例如磁盘满）**不豁免**，照常计数——豁免的是"自带解法"，不是"文件工具"。
+
+### 3. 指纹补上 target：对文件工具，循环的单位是 (工具, 路径)
+
+只豁免还不够：`read` 两个**不同**的不存在路径仍会合并（"file not found" 没有 `FS_*` 码行）。
+`errorTarget()` 取出错误点名的路径并折小写，指纹变成 `digest({tool, code, target})`。
+于是：
+
+```text
+读两个不存在的文件（探索）        → 两条指纹，不熔断
+同一个文件读两次失败（真循环）    → 一条指纹，第 2 次熔断   ← 能力保留
+```
+
+### 4. 注释不再撒谎
+
+`lib/index.js` 原来写着"rejection handled inside the dispatcher below"——dispatcher 里从来没有这段。
+改成事实陈述（announce-only），并写清为什么**不该**补上执行：read/write/edit 互为解法，强制 `do not retry read` 会锁死会话。
+
+### 修复前后（同一组真实错误文本，`circuit-fingerprint.mjs` 差分）
+
+| case | 修前 | 修后 |
+|---|---|---|
+| `edit` 两个不同文件 unread | 同指纹 → **第 2 次熔断 edit** | `exempt`，不计数 |
+| `edit` 另一原因（锚点不存在） | 与上面**同指纹** | 独立指纹 |
+| `read` 两个不同缺失文件 | 同指纹 → **熔断 read** | 两条独立指纹 |
+| `write` unread | 计入 `write` | `exempt` |
+| 控制组 `E32001` / `E32002` | 正确区分 | 正确区分（未变） |
+| **最终处于熔断状态的工具** | **`edit`, `read`** | **（无）** |
+
+回归测试：`core/runtime-seam/circuit.test.mjs`，26 条断言 `ALL PASS`（含"同一个文件两次仍会熔断"这条能力保留断言）。
+
+> 仍未做（需要单独决定）：是否把豁免从"错误码"放宽到"整类文件工具"。当前实现保留了在**同一路径**上反复失败的熔断能力——
+> 这是有意为之，因为那才是真的循环。放宽到整类工具会把这个能力一起关掉。
 
 ---
 
 ## 证据路径
 
-- 单元复现：`async-spike/circuit-fingerprint.mjs`（`node circuit-fingerprint.mjs`）
-- 源码：`core/runtime-seam/lib/core.mjs:108-132`、`core/runtime-seam/lib/index.js:276-316`、`@deepseek-ai/dsh-tool-fs/lib/index.js:545-550`
+- 差分复现：`experiments/async-lifecycle/harness/circuit-fingerprint.mjs`
+  （`node circuit-fingerprint.mjs` 跑 repo 源；带一个路径参数即可跑任意实装副本对比）
+- 回归测试：`core/runtime-seam/circuit.test.mjs`（26 断言）
+- 源码：`core/runtime-seam/lib/core.mjs`（tracker）、`core/runtime-seam/lib/index.js`（观测点 + 注释）、
+  `@deepseek-ai/dsh-tool-fs/lib/index.js:545-550`（两个被豁免的码从哪来）
 - live 观测：`trajectory_find` 查 `[runtime-observation circuit-open]`、`has not been read`、`action-rejected`

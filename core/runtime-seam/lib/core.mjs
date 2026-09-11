@@ -106,28 +106,94 @@ export function circuitOpenReason({ fact, authority = false }) {
 }
 
 // ---- circuit tracker (E4/E4b) ----
-// LEGACY (2026-09-02): fingerprint semantics ("same tool + same error code")
-// superseded by core/runtime-circuit, which consumes the Progress fold
-// (stalled x N). Kept exported for seam-internal compatibility until the
-// preset rewiring lands; new policies must NOT depend on this class.
+// LEGACY (2026-09-02): superseded by core/runtime-circuit, which consumes the
+// Progress fold (stalled x N). Kept exported for seam-internal compatibility
+// until the preset rewiring lands; new policies must NOT depend on this class.
+//
+// 2026-09-11 -- fingerprint repaired. It used to be digest({tool, code}) with
+// `code = /E\d+/ ?? "generic-error"`. DSH's filesystem errors carry codes like
+// FS_NOT_OBSERVED, which contain no E<digits>, so EVERY filesystem failure of a
+// tool collapsed into one counter: different files and unrelated causes piled
+// up under a single signature and opened a circuit on `read`, `write` and
+// `edit` -- three tools that are each other's remedy. Two changes:
+//
+//   1. A remediated protocol error is a TEACHING outcome carrying its own
+//      remedy ("read the file, then retry"), exactly like a guard denial
+//      ("[action-rejected]"), and must never open a circuit. It is not counted.
+//   2. The fallback is the normalized error SHAPE rather than one shared token,
+//      so the same mistake on two files still groups while "unread file" and
+//      "old_string not found" no longer do.
+
+/** Filesystem codes that carry their own remedy. Never evidence of a loop. */
+const REMEDIATED_FS_CODES = new Set(["FS_NOT_OBSERVED", "FS_STALE_VERSION"]);
+
+/**
+ * The stable identity of an error: quoted spans and absolute paths are blanked
+ * and whitespace is collapsed, so two occurrences of the same failure compare
+ * equal while two different failures do not.
+ */
+export function errorShape(errorText) {
+  return String(errorText ?? "")
+    .replace(/"[^"\n]*"/g, '"<str>"')
+    .replace(/'[^'\n]*'/g, '"<str>"')
+    .replace(/[A-Za-z]:\\[^\s"']+/g, "<path>")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 240);
+}
+
+/** The remediated filesystem code in an error text, if it carries one. */
+export function remediatedFsCode(errorText) {
+  const match = /(?:^|\n)\s*(FS_[A-Z_]+)\s*$/m.exec(String(errorText ?? ""));
+  const code = match?.[1];
+  return code !== undefined && REMEDIATED_FS_CODES.has(code) ? code : undefined;
+}
+
+/**
+ * The path an error is about, when it names one.
+ *
+ * A circuit is per TOOL, but the natural unit of a loop in a filesystem tool is
+ * (tool, path): "read this path twice" is a loop, "read two different paths
+ * that both 404" is exploration. Without the target, the second case opens a
+ * circuit on `read` -- the very tool the model needs to make progress.
+ * Windows paths are case-insensitive, so the target is folded.
+ */
+export function errorTarget(errorText) {
+  const match = /"([^"\n]*[\\/][^"\n]*)"|'([^'\n]*[\\/][^'\n]*)'/.exec(String(errorText ?? ""));
+  const path = match?.[1] ?? match?.[2];
+  return path === undefined ? undefined : path.toLowerCase();
+}
+
 export class CircuitTracker {
   constructor({ threshold = 2 } = {}) {
     this.threshold = threshold;
     this.counts = new Map();
     this.open = new Set(); // tool names with an open circuit
+    this.exempted = 0;
   }
 
-  /** Signature ignores arguments: same tool + same error code = same loop. */
+  /**
+   * Same tool + same error identity + same target = same loop.
+   * A remediated protocol error is exempt: it returns `exempt: true` and is
+   * never counted towards a circuit.
+   */
   observeFailure(tool, errorText, threshold = this.threshold) {
-    const code = /E\d+/.exec(errorText ?? "")?.[0] ?? "generic-error";
-    const signature = digest({ tool, code });
+    const text = String(errorText ?? "");
+    const remediated = remediatedFsCode(text);
+    if (remediated !== undefined) {
+      this.exempted += 1;
+      return { opened: false, exempt: true, tool, code: remediated, signature: null, count: 0 };
+    }
+    const code = /E\d+/.exec(text)?.[0] ?? errorShape(text);
+    const target = errorTarget(text);
+    const signature = digest(target === undefined ? { tool, code } : { tool, code, target });
     const count = (this.counts.get(signature) ?? 0) + 1;
     this.counts.set(signature, count);
     if (count >= threshold && !this.open.has(tool)) {
       this.open.add(tool);
-      return { opened: true, tool, signature, count };
+      return { opened: true, exempt: false, tool, code, target, signature, count };
     }
-    return { opened: false, tool, signature, count };
+    return { opened: false, exempt: false, tool, code, target, signature, count };
   }
 }
 

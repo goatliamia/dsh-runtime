@@ -288,7 +288,10 @@ export function apply(ctx, _config) {
       .map((block) => (block?.type === "text" ? block.text : ""))
       .join("");
     // A guard denial is a teaching outcome, not a tool failure: it must never
-    // open a circuit (caught by the mode test, 2026-09-01).
+    // open a circuit (caught by the mode test, 2026-09-01). The tracker applies
+    // the same rule to remediated filesystem protocol errors ("read the file,
+    // then retry") -- see CircuitTracker.observeFailure. Both are outcomes that
+    // tell the model how to proceed; neither is evidence of a loop.
     if (text.includes("[action-rejected]")) return;
     const outcome = circuit.observeFailure(toolName, text, Number(settingsNow().circuitThreshold) || 2);
     if (outcome.opened) {
@@ -311,9 +314,18 @@ export function apply(ctx, _config) {
     }
   });
 
-  // ---- the guard dispatcher also rejects calls to tools with an open circuit
-  // (E4b: reject + announce was the best variant) ----
-  // handled inside the dispatcher below.
+  // ---- an open circuit ANNOUNCES; it does not reject ----
+  // Pre-2026-09-11 this comment claimed the rejection was "handled inside the
+  // dispatcher below". It never was: the dispatcher consults `guardRules` only,
+  // and guardRules is filled solely by explicit registration, so nothing turns
+  // an open circuit into a rejection. Measured on the live install: 99
+  // successful edit/write results after a circuit opened, zero
+  // `[action-rejected]` results in any scanned session.
+  //
+  // Wiring that rejection in is NOT the missing piece. read / write / edit are
+  // each other's remedy, so an enforced `do not retry read` would deadlock the
+  // session. Enforcement belongs on capabilities with no self-service remedy;
+  // for the filesystem tools the fingerprint exemption above is the real fix.
 
   ctx.on("agent/pre-step", async (payload, next) => {
     const decision = await next();

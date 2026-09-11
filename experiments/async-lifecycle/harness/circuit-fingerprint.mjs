@@ -1,10 +1,17 @@
-// circuit-fingerprint.mjs — does the LIVE circuit tell two DIFFERENT filesystem
-// failures apart? Imports the tracker from the installed seam package (not a
-// copy), feeds it real model-visible error texts captured from live sessions,
-// and prints the resulting signatures.
+// circuit-fingerprint.mjs — does the circuit tell two DIFFERENT filesystem
+// failures apart? Feeds real model-visible error texts captured from live
+// sessions to a CircuitTracker and prints the resulting signatures.
 //
-//   node circuit-fingerprint.mjs
-import { CircuitTracker } from 'file:///C:/Users/14100/.dsh/profiles/web/node_modules/dsh-runtime-seam/lib/core.mjs'
+//   node circuit-fingerprint.mjs [path-to-core.mjs]
+//
+// Default target is the repo source (post-fix). Point it at an installed copy
+// to see the pre-fix behaviour, e.g.
+//   node circuit-fingerprint.mjs C:/Users/<user>/.dsh/profiles/web/node_modules/dsh-runtime-seam/lib/core.mjs
+import { pathToFileURL } from 'node:url'
+
+const target = process.argv[2] ?? 'D:/projects/runtime/dsh-runtime/core/runtime-seam/lib/core.mjs'
+const { CircuitTracker } = await import(pathToFileURL(target).href)
+console.log(`tracker: ${target}\n`)
 
 // Verbatim tool-result texts, as the model saw them (trajectory query, 2026-09-11).
 const cases = [
