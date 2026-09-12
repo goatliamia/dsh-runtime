@@ -93,15 +93,34 @@ export function teachingReason({ action, fact, predicate, temporal = false, prom
   return lines.join("\n");
 }
 
+/**
+ * The model-facing render of a circuit observation.
+ *
+ * Facts only: what was observed, how often, on what, and which registry entry
+ * holds it. There is deliberately NO imperative. The first version ended with
+ * "do not retry <tool>", and the measured response to that command was that the
+ * model routed around the tool (edit -> write) while continuing the same work:
+ * a command it can disobey is weaker than a fact it can act on. See
+ * docs/status/circuit-fingerprint-vs-fs-errors-2026-09-11.md.
+ */
+export function circuitObservationText({ tool, target, code, count, threshold, factPath, fact }) {
+  const where = target === undefined || target === null ? "" : ` on ${target}`;
+  return [
+    "[runtime-observation circuit-open]",
+    `observed: "${tool}" failed ${count} times with the same failure${where} (threshold ${threshold}).`,
+    `failure: ${code}`,
+    `fact: ${factPath} = "${fact.value}" (authority: ${fact.authority}, revision: ${fact.revision}, fingerprint: ${fact.fingerprint})`,
+  ].join("\n");
+}
+
 export function circuitOpenReason({ fact, authority = false }) {
   const lines = ["[action-rejected] circuit-open"];
-  lines.push(`fact: ${fact.path} = "failed"`);
+  lines.push(`fact: ${fact.path} = "${fact.value}"`);
   if (authority) {
     lines.push(`status: known | authority: ${fact.authority} | revision: ${fact.revision} | fingerprint: ${fact.fingerprint}`);
   }
-  lines.push("predicate: repeated identical failure with no runtime progress");
+  lines.push("predicate: the same tool + failure + target repeated with no effect progress");
   lines.push("temporal: no");
-  lines.push("next: stop retrying; report the error");
   return lines.join("\n");
 }
 

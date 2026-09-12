@@ -43,11 +43,16 @@ export function verifyRelease(out = DEFAULT_OUT) {
   const problems = [];
   let tarballs = 0;
   let checked = 0;
+  // Run tar with `cwd: out` and a BARE filename. Handing tar an absolute
+  // Windows path makes this PATH-dependent: bsdtar reads "D:\..." as local,
+  // while GNU tar (the one MSYS ships) reads the drive letter as a remote host
+  // and dies with "Cannot connect to D: resolve failed" -- which is exactly how
+  // this broke pack-release on 2026-09-13.
+  const tar = (args) => execFileSync("tar", args, { cwd: out, encoding: "utf8", maxBuffer: 1 << 28 });
   for (const name of readdirSync(out)) {
     if (!name.endsWith(".tgz")) continue;
     tarballs += 1;
-    const file = join(out, name);
-    const entries = execFileSync("tar", ["-tzf", file], { encoding: "utf8", maxBuffer: 1 << 28 })
+    const entries = tar(["-tzf", name])
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
@@ -55,7 +60,7 @@ export function verifyRelease(out = DEFAULT_OUT) {
     for (const entry of entries) {
       if (!/\.(?:js|mjs|cjs)$/.test(entry)) continue;
       checked += 1;
-      const source = execFileSync("tar", ["-xzOf", file, entry], { encoding: "utf8", maxBuffer: 1 << 28 });
+      const source = tar(["-xzOf", name, entry]);
       for (const pattern of SPECIFIER_PATTERNS) {
         pattern.lastIndex = 0;
         let match = pattern.exec(source);

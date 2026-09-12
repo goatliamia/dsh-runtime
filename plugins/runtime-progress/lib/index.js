@@ -11,7 +11,7 @@
  *
  * This plugin's own policy (no-progress, evidence E4/E4b):
  *   - the seam already fingerprints repeated identical failures and opens a
- *     circuit (facts: capabilities.<tool>.state = failed);
+ *     circuit (facts: capabilities.<tool>.state = stalled);
  *   - this plugin additionally reacts: while a circuit is open, it can lock
  *     shell mutations (`pwsh`) so a looping session cannot burn more work.
  */

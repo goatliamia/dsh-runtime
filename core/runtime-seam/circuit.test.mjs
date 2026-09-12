@@ -4,7 +4,7 @@
 // The bug this pins down: `code = /E\d+/ ?? "generic-error"` gave every
 // filesystem failure of a tool the SAME signature, so two unread-file errors on
 // two different paths opened a circuit on `edit`, `write` or `read`.
-import { CircuitTracker, errorShape, errorTarget, remediatedFsCode } from "./lib/core.mjs";
+import { CircuitTracker, circuitObservationText, errorShape, errorTarget, remediatedFsCode } from "./lib/core.mjs";
 
 const tc = [];
 const ok = (name, condition) => tc.push([name, condition === true]);
@@ -114,6 +114,30 @@ const STALE = (path) =>
   const a = t.observeFailure("exp_flaky", "Error: E32001 flaky");
   const b = t.observeFailure("exp_flaky", "Error: E32001 flaky");
   ok("coded loop without a target still opens", b.opened === true && a.target === undefined);
+}
+
+// 11. the announcement states the observation and gives no order
+{
+  const fact = { path: "capabilities.read.state", value: "stalled", authority: "runtime", revision: 1, fingerprint: "abc123" };
+  const text = circuitObservationText({
+    tool: "read",
+    target: "c:\\repo\\gone.mjs",
+    code: 'Error: cannot read "<str>": not found',
+    count: 2,
+    threshold: 2,
+    factPath: fact.path,
+    fact,
+  });
+  ok("names the tool", text.includes('"read"'));
+  ok("names the target", text.includes("c:\\repo\\gone.mjs"));
+  ok("states the count and threshold", text.includes("failed 2 times") && text.includes("threshold 2"));
+  ok("cites the registry entry", text.includes('fact: capabilities.read.state = "stalled"'));
+  ok("carries the authority line", text.includes("authority: runtime") && text.includes("fingerprint: abc123"));
+  // The earlier version ended "...; do not retry read." A command the model can
+  // disobey is weaker than a fact it can act on, and the measured response was
+  // that it routed around the tool instead.
+  ok("carries no imperative", !/do not retry|stop retrying|must not|don't retry/i.test(text));
+  ok("no target means no 'on' clause", !circuitObservationText({ tool: "x", code: "c", count: 2, threshold: 2, factPath: "p", fact }).includes(" on "));
 }
 
 let failed = 0;

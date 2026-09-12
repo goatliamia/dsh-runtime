@@ -151,6 +151,38 @@ seq 1145  tool/result Updated file                    ← 成功
 `lib/index.js` 原来写着"rejection handled inside the dispatcher below"——dispatcher 里从来没有这段。
 改成事实陈述（announce-only），并写清为什么**不该**补上执行：read/write/edit 互为解法，强制 `do not retry read` 会锁死会话。
 
+（"没接上"≠"当初决定不接"：那句注释指的是 **E4b 实验**——当时比过几种形态，结论是"拒绝＋通告"最好。
+只是拒绝那一半从来没实现。而按现在的证据，**没接上反而是对的**。）
+
+### 5. 通告的形态：命令句 → 事实句（2026-09-13）
+
+这条线的正事是**把观测暴露出来**，不是让模型照办。原通告最后一句是命令，而且它自称的事实有两处不准：
+
+```text
+旧（命令句）：
+  [runtime-observation circuit-open]
+  capabilities.read.state = "failed" (authority: runtime, revision: 1, fingerprint: f4a2863339b7178a)
+  repeated identical failure detected; do not retry read.
+                 ↑ 不是 identical（两个不同文件也算）   ↑ 命令，不是信息
+
+新（事实句）：
+  [runtime-observation circuit-open]
+  observed: "read" failed 2 times with the same failure on c:\repo\gone.mjs (threshold 2).
+  failure: Error: cannot read "<str>": not found
+  fact: capabilities.read.state = "stalled" (authority: runtime, revision: 1, fingerprint: f4a2863339b7178a)
+```
+
+三处改动：
+
+1. **`= "failed"` → `= "stalled"`**：能力没坏，是**没有效果进展**——这正是本文件开头自己用的词
+   （`execution=failed, effect=stalled`）。原来的值把"卡住"说成了"坏了"。
+2. **`repeated identical failure detected` → 具体事实**：哪个工具、失败几次、在哪个目标上、阈值多少。
+   "identical" 在修复前是假的；修复后也只该由**同一目标**才成立，所以现在把它写出来。
+3. **删掉 `do not retry <tool>`**：这是命令，不是信息。而且有实测反证——模型收到它之后**从 `edit` 绕到 `write`**，
+   活照干（§后果 第 1 条）。**一条它能够绕开的命令，比一条它能够据以行动的事实更弱。**
+
+判据落成一句：**暴露事实，不下命令。**（这条也是两条线共用的：runtime 线看暴露，职责归属看那条线。）
+
 ### 修复前后（同一组真实错误文本，`circuit-fingerprint.mjs` 差分）
 
 | case | 修前 | 修后 |

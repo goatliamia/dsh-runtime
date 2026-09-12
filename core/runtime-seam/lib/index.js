@@ -17,6 +17,7 @@ import {
   FactRegistry,
   PRESET_NAMES,
   activityRecord,
+  circuitObservationText,
   circuitOpenReason,
   resolvePreset,
   teachingReason,
@@ -293,10 +294,14 @@ export function apply(ctx, _config) {
     // then retry") -- see CircuitTracker.observeFailure. Both are outcomes that
     // tell the model how to proceed; neither is evidence of a loop.
     if (text.includes("[action-rejected]")) return;
-    const outcome = circuit.observeFailure(toolName, text, Number(settingsNow().circuitThreshold) || 2);
+    const threshold = Number(settingsNow().circuitThreshold) || 2;
+    const outcome = circuit.observeFailure(toolName, text, threshold);
     if (outcome.opened) {
       const factPath = `capabilities.${toolName}.state`;
-      const factResult = seam.setFact(factPath, "failed", { authority: "runtime" });
+      // "stalled", not "failed": nothing about the capability is broken, it made
+      // no effect progress -- which is the vocabulary this file already uses at
+      // the top ("execution=failed, effect=stalled").
+      const factResult = seam.setFact(factPath, "stalled", { authority: "runtime" });
       recordActivity("circuit", {
         tool: toolName,
         fingerprint: outcome.signature,
@@ -308,7 +313,15 @@ export function apply(ctx, _config) {
       pendingDeltas.push({
         kind: "circuit-open",
         fact: factResult.fact,
-        text: `[runtime-observation circuit-open]\n${factPath} = "failed" (authority: runtime, revision: ${factResult.fact.revision}, fingerprint: ${factResult.fact.fingerprint})\nrepeated identical failure detected; do not retry ${toolName}.`,
+        text: circuitObservationText({
+          tool: toolName,
+          target: outcome.target,
+          code: outcome.code,
+          count: outcome.count,
+          threshold,
+          factPath,
+          fact: factResult.fact,
+        }),
       });
       persist();
     }
