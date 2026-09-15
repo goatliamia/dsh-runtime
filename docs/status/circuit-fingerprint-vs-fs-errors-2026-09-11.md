@@ -132,7 +132,7 @@ seq 1145  tool/result Updated file                    ← 成功
 ### 2. 带解法的文件协议错误整类豁免（与 `[action-rejected]` 同一理由）
 
 `REMEDIATED_FS_CODES = { FS_NOT_OBSERVED, FS_STALE_VERSION }` ——这两个码**就是** DSH 用来表达"读了再重试"的
-（`dsh-tool-fs/lib/index.js:545-550`）。它们返回 `exempt: true`，**不计数**，只累加 `tracker.exempted` 供诊断。
+（`dsh-tool-fs/lib/index.js:545-550`；`0.1.6-alpha.1` 复核后下移为 `:539-544`，码集与豁免集**未变**）。它们返回 `exempt: true`，**不计数**，只累加 `tracker.exempted` 供诊断。
 未知的 `FS_*`（例如磁盘满）**不豁免**，照常计数——豁免的是"自带解法"，不是"文件工具"。
 
 ### 3. 指纹补上 target：对文件工具，循环的单位是 (工具, 路径)
@@ -219,5 +219,5 @@ seq 1145  tool/result Updated file                    ← 成功
   （`node circuit-fingerprint.mjs` 跑 repo 源；带一个路径参数即可跑任意实装副本对比）
 - 回归测试：`core/runtime-seam/circuit.test.mjs`（26 断言）
 - 源码：`core/runtime-seam/lib/core.mjs`（tracker）、`core/runtime-seam/lib/index.js`（观测点 + 注释）、
-  `@deepseek-ai/dsh-tool-fs/lib/index.js:545-550`（两个被豁免的码从哪来）
+  `@deepseek-ai/dsh-tool-fs/lib/index.js:545-550`（两个被豁免的码从哪来；`0.1.6-alpha.1` 为 `:539-544`）
 - live 观测：`trajectory_find` 查 `[runtime-observation circuit-open]`、`has not been read`、`action-rejected`
