@@ -40,134 +40,151 @@ dsh plugin --profile <你的profile> add dsh-runtime-0.1.0.tgz
 
 ## 它是怎么工作的？
 
-最简单的理解：
+一次工具调用会发生四件事，Runtime 只做后面两件：
 
 ```text
-Model
-  ↓
-Tool
-  ↓
-Runtime
-  ↓
-现实世界
-  ↓
-Event
-  ↓
-Runtime / Policy
-  ↓
-下一步
+模型调用工具            <- 这一层不是 Runtime
+会话把这些记成 event     <- DSH Session
+Runtime 把 event 折成事实
+策略决定要不要说话
 ```
 
-工具负责**做事**。
-
-Event 负责记录**发生过什么**。
-
-Runtime 从这些已经发生的事情里得到自己需要的判断，再决定是否需要介入。
-
-因此：
+真正需要区分的是这两句：
 
 ```text
-tool error   ≠   effect didn't happen
-tool success ≠   effect happened
+tool error   ≠   effect 没发生
+tool success ≠   effect 发生了
 ```
 
-这两个区别在简单任务里很难察觉，但在异步任务、部署、插件、外部服务和动态 Runtime 中会越来越重要。
+举个具体例子。`pwsh` 返回 exit 0，命令也确实跑了，但那份改动没有生效（写到了别处，或者被后面的步骤覆盖）。从事件看：
+
+```js
+execution = "success"     // 命令本身跑成功了
+effect    = "unknown"     // 世界有没有变，事件里看不出来
+```
+
+简单任务里这两个差别无所谓；异步任务、部署、插件、外部服务里，它决定下一步该不该重试。
 
 ---
 
 ## Event 是事实来源
 
-DSH 的 Session Event 可以看作运行过程的一本账。
+DSH 的 Session Event 是这次运行的一本账：**什么发生了，以及顺序**。Runtime 需要的事实全部从它折出来，不再维护第二套"世界状态"。
 
-它记录：
+折出来就是一个普通对象（`foldProjection(events)`，来自 `dsh-runtime-progress`）：
 
-> 什么事情发生了，以及发生的顺序。
-
-需要知道当前状态时，可以从事件得到当前事实；需要知道刚才发生了什么变化，也可以从事件中得到。
-
-因此 Runtime 不需要再维护一套与 DSH 平行的“世界状态”。
-
-例如：
-
-```text
-Event
-  ↓
-当前事实
-  ↓
-最近变化
-  ↓
-Progress
+```js
+{
+  axes: {
+    execution: { turns: 1, steps: 4, toolCalls: 2, toolErrors: 1, turnOutcome: "completed" },
+    effect: { exp_flaky: { callResult: "failed", worldEffect: "unknown" } },
+  },
+  verdict: { turn: "completed", execution: "failed", effect: { exp_flaky: "unknown" } },
+  unknownFields: ["effects.exp_flaky.worldEffect"],
+}
 ```
 
-Progress 本身不是另一份状态。
+`verdict` 是这一轮的结论：执行失败，效果未知。看不出来的字段进 `unknownFields`，不猜一个答案。
 
-它只是回答：
-
-> **这一步有没有真正让事情往前走？**
-
-如果事实不足，也可以明确得到 `unknown`，而不是猜一个答案。
+Progress 不是另一份状态，它只回答"这一步有没有真的往前走"。
 
 ---
 
 ## 几个很小的能力
 
+每个能力都很小，形态也都很像：**一个注册入口，一条明确的输出**。下面每个都给最小例子。
+
 ### Guard
 
-执行之前处理确定性的边界问题。
+执行之前拦下确定不该做的事。
 
-> **这件事现在能不能做？**
+```js
+seam.registerGuard({
+  action: "pwsh",
+  factPath: "runtime-progress.shell-lock",
+  predicate: (value) => value !== "locked",
+  predicateText: "pwsh requires runtime-progress.shell-lock != locked",
+})
+```
 
-例如一个动作明确不应该进入执行阶段，就在执行之前拦住。
+事实是 `locked` 时，模型调用 `pwsh` 会拿到一条 `[action-rejected]` 加那句 `predicateText`，调用不会进入执行。
 
 ### Progress
 
-执行之后观察实际变化。
+执行之后看有没有真的往前走。
 
-> **刚才到底有没有进展？**
+```js
+const p = foldProjection(events)
+p.verdict.execution   // "success" | "failed" | "none"
+p.verdict.effect      // { 工具名: "success" | "failed" | "unknown" }
+```
 
-它不负责停止、重试或修复，只提供判断。
+"命令跑成了"和"事情往前走了"是两条轴，分开报。它不停止、不重试、不修，只提供判断。
 
 ### Circuit
 
-如果一个动作持续失败，而且世界一直没有新的进展：
+同一件事反复失败，而且一直没有进展时，说一次。
 
-> **不要一直重复做同一件事。**
+```js
+registerCircuitContract({ id: "exp_flaky", match: { tool: "exp_flaky" }, threshold: 2 })
+```
+
+判定的单位是工具加失败形态加目标，不是"工具"。到阈值时模型收到一条观测：
+
+```text
+[runtime-observation circuit-open]
+observed: "read" failed 2 times with the same failure on c:\repo\gone.mjs (threshold 2).
+failure: Error: cannot read "<str>": not found
+fact: capabilities.read.state = "stalled" (authority: runtime, revision: 1, fingerprint: ...)
+```
+
+它只报观测，不下命令。也**不做拒绝**：文件工具里读、写、改互为解法，拒绝会把会话锁死。
 
 ### Reconcile
 
-如果执行结果和现实状态可能不一致：
+非原子动作已经跑过一次时，不许重放。
 
-> **先确认现实，再决定下一步。**
+```js
+registerNonAtomicContract({ id: "deploy", match: { tool: "pwsh", pattern: /deploy\.ps1/ } })
+```
 
-例如工具返回失败，但外部状态已经变化，就不应该直接重新执行。
+第二次调用被拦下，理由是："was already invoked once and its confirmation was lost; the effect may already be applied, so a retry can duplicate the side effect."
 
 ### Delta
 
-只有真正值得关注的变化出现时，才告诉模型。
+只有值得关注的变化才告诉模型。
 
-Runtime 不需要不断播报“现在还是这样”。
+```js
+{ role: "user",
+  source: { kind: "plugin", plugin: "dsh-runtime-seam" },
+  content: [{ type: "text", text: "[runtime-observation ...]" }] }
+```
+
+变化以一条 user-role 消息进入下一步。Runtime 不播报"现在还是这样"。
 
 ### 子代编排（Child orchestration）
 
-父 agent 把活派给后台子代。runtime 已经知道**发生了什么**——子代开始、结束、释放 ownership——所以编排层不需要去问。
+父 agent 把活派给后台子代，编排层等的是**终局事实**，不是状态。
 
-```text
-spawn  ->  wait  ->  query（读子代自己的轨迹）  ->  模型判断这意味着什么
+```js
+const fact = await ctx.childOrchestration.wait(childId, 30000)
+// { outcome: "settled", stopReason: "completed", lastAssistantMessage: "..." }
 ```
 
-- **wait** 消费终局事实（`subagent/end`），而不是状态：`idle` 不等于“结束”；子代静默但仍持有活孙代时是 *waiting*，不是完成。
-- **query** 在子代结算后，从它自己的持久会话里重新取回到底发生过什么。
-- 模型不轮询、看不到 runtime 的私有 residency 状态，也不会被塞一个编造的“结果”——子代产出了什么是判断，不是 harness 能拥有的确定事实。
-
-实现为 `ctx.childOrchestration`（`wait` / `waitAll` / `residency`），见 `dsh-runtime-orchestration`；语义冻结在 [`docs/20-child-orchestration-semantic-contract.md`](docs/20-child-orchestration-semantic-contract.md)，实测见 [`experiments/async-lifecycle/`](experiments/async-lifecycle/)。
+`idle` 不等于结束：子代静默但还持有活孙代时是 waiting，不是完成。实测里这个等待在"看起来已经不跑了"的 30.5 秒内一次都没有提前返回。语义冻结在 [`docs/20-child-orchestration-semantic-contract.md`](docs/20-child-orchestration-semantic-contract.md)，实测见 [`experiments/async-lifecycle/`](experiments/async-lifecycle/)。
 
 ### Continuation（事前）
 
-当事实与契约把下一步压缩到唯一确定动作时，Runtime 直接执行——走正常的权限 / 守卫 / 取消边界——模型只消化已经发生的结果。
+当事实与契约把下一步压缩到唯一确定的动作时，Runtime 直接执行，模型只消化结果。
 
-没有把握时一律不接管。该引擎已产品化并入 `dsh-runtime-seam`（由 settings 的 `continuation` 位驱动），
-首发日常合同 `post-write-syntax-check`：模型写入/编辑工作区 JS 模块后，Runtime 对它们跑 `node --check`
-并给模型一条 digest。详见 [`docs/status/pre-productized-2026-09-03.md`](docs/status/pre-productized-2026-09-03.md)。
+首发合同是 `post-write-syntax-check`：模型写完或改完工作区 JS 模块后，Runtime 自己跑 `node --check`，然后交给模型一条 digest：
+
+```text
+[runtime-continuation] deterministic step already executed by the runtime: post-write-syntax-check.
+Do not re-run it; digest the outcome and continue from the current world state.
+```
+
+它走正常的工具管线（权限、守卫、取消照旧），所以模型看到的是一个**已经发生的结果**，不是一句要求。没有把握时一律不接管。由 settings 里的 `continuation` 位驱动，详见 [`docs/status/pre-productized-2026-09-03.md`](docs/status/pre-productized-2026-09-03.md)。
 
 ---
 
@@ -295,6 +312,12 @@ Runtime 不是一个新的“大管家”。
 > **模型自己看得清的地方，它不打扰；模型看不清现实的地方，它补上一点确定性。**
 
 完整实验过程、原始数据和限制条件见 [`docs/`](docs/)——尤其是 Runtime Continuation 线：[`docs/status/runtime-continuation-2026-09-02.md`](docs/status/runtime-continuation-2026-09-02.md)（命题）、[`runtime-continuation-boundaries-2026-09-02.md`](docs/status/runtime-continuation-boundaries-2026-09-02.md)（边界）、[`runtime-continuation-instruction-2026-09-02.md`](docs/status/runtime-continuation-instruction-2026-09-02.md)（instruction continuity）、[`runtime-continuation-ownership-2026-09-03.md`](docs/status/runtime-continuation-ownership-2026-09-03.md)（所有权边界），以及四轮汇总 [`runtime-continuation-summary-2026-09-03.md`](docs/status/runtime-continuation-summary-2026-09-03.md)。
+
+后面三条线各有独立报告：
+
+* 子代编排 —— [`docs/20-child-orchestration-semantic-contract.md`](docs/20-child-orchestration-semantic-contract.md)（冻结的语义，含那个把 `idle` 从终局判定里排除掉的 30.5 秒负例）
+* turn-stopping —— [`docs/status/turn-stopping-continuation-and-cost-2026-09-11.md`](docs/status/turn-stopping-continuation-and-cost-2026-09-11.md)（收尾点算不算合法的续跑点，在那里注入的代价是多少），机制写在 [`docs/21-turn-continuation-and-injection.md`](docs/21-turn-continuation-and-injection.md)
+* 熔断在文件工具上的误报 —— [`docs/status/circuit-fingerprint-vs-fs-errors-2026-09-11.md`](docs/status/circuit-fingerprint-vs-fs-errors-2026-09-11.md)（两个不同文件塌成一条指纹，以及修法）
 
 ---
 

@@ -41,72 +41,53 @@ dsh plugin --profile <your-profile> add dsh-runtime-0.1.0.tgz
 
 ## How does it work?
 
-The simplest way to understand it:
+A tool call produces four things. Runtime owns the last two:
 
 ```text
-Model
-  ↓
-Tool
-  ↓
-Runtime
-  ↓
-The real world
-  ↓
-Event
-  ↓
-Runtime / Policy
-  ↓
-Next step
+the model calls a tool        <- not the Runtime's layer
+the session records an event  <- DSH Session
+Runtime folds events into facts
+policy decides whether to speak
 ```
 
-Tools are responsible for **doing things**.
-
-Events are responsible for recording **what happened**.
-
-Runtime derives the judgments it needs from what already happened, and only then decides whether to intervene.
-
-Hence:
+The distinction that matters:
 
 ```text
 tool error   ≠   effect didn't happen
 tool success ≠   effect happened
 ```
 
-These two distinctions barely matter in simple tasks, but they matter more and more in async jobs, deployments, plugins, external services, and dynamic runtimes.
+A concrete case: `pwsh` exits 0 and the command really did run, but the change did not take effect (it wrote somewhere else, or a later step overwrote it). From the events:
+
+```js
+execution = "success"     // the command itself succeeded
+effect    = "unknown"     // whether the world changed is not in the stream
+```
+
+These barely differ in simple tasks. In async jobs, deployments, plugins and external services they decide whether the next step should retry.
 
 ---
 
 ## Event is the source of facts
 
-A DSH Session Event stream can be thought of as the ledger of a run.
+A DSH Session Event stream is the ledger of a run: **what happened, and in what order**. Every fact the Runtime needs is folded out of it, so there is no second "world state" to keep in sync.
 
-It records:
+The fold returns an ordinary object (`foldProjection(events)`, from `dsh-runtime-progress`):
 
-> What happened, and in what order.
-
-Need the current state? Derive the current facts from the events. Need to know what just changed? The events have that too.
-
-So Runtime does not need to maintain a parallel "world state" next to DSH.
-
-For example:
-
-```text
-Event
-  ↓
-Current facts
-  ↓
-Recent changes
-  ↓
-Progress
+```js
+{
+  axes: {
+    execution: { turns: 1, steps: 4, toolCalls: 2, toolErrors: 1, turnOutcome: "completed" },
+    effect: { exp_flaky: { callResult: "failed", worldEffect: "unknown" } },
+  },
+  verdict: { turn: "completed", execution: "failed", effect: { exp_flaky: "unknown" } },
+  unknownFields: ["effects.exp_flaky.worldEffect"],
+}
 ```
 
-Progress itself is not another piece of state.
+`verdict` is this turn's conclusion: execution failed, effect unknown. Fields the stream cannot answer land in `unknownFields` instead of a guess.
 
-It only answers:
-
-> **Did this step actually move things forward?**
-
-When the facts are insufficient, the honest answer is `unknown` — not a guess.
+Progress is not a second piece of state; it answers one question, whether this step actually moved things forward.
 
 ---
 
@@ -114,69 +95,111 @@ When the facts are insufficient, the honest answer is `unknown` — not a guess.
 
 ### Guard
 
-Handles deterministic boundary questions before execution.
+Blocks, before execution, the actions that clearly must not run.
 
-> **May this run right now?**
+```js
+seam.registerGuard({
+  action: "pwsh",
+  factPath: "runtime-progress.shell-lock",
+  predicate: (value) => value !== "locked",
+  predicateText: "pwsh requires runtime-progress.shell-lock != locked",
+})
+```
 
-For example: an action that clearly should not execute gets blocked before execution.
+While the fact is `locked`, a `pwsh` call comes back with `[action-rejected]` and that
+`predicateText`; the call never reaches execution.
 
 ### Progress
 
-Observes what actually changed after execution.
+After execution, asks whether anything actually moved.
 
-> **Did anything actually progress?**
+```js
+const p = foldProjection(events)
+p.verdict.execution   // "success" | "failed" | "none"
+p.verdict.effect      // { toolName: "success" | "failed" | "unknown" }
+```
 
+"The command succeeded" and "the world moved" are two axes, reported separately.
 It never stops, retries, or repairs anything — it only provides the judgment.
 
 ### Circuit
 
-When an action keeps failing and the world keeps showing no progress:
+When the same action keeps failing with no progress, it says so once.
 
-> **Do not keep repeating the same thing.**
+```js
+registerCircuitContract({ id: "exp_flaky", match: { tool: "exp_flaky" }, threshold: 2 })
+```
+
+The unit is tool plus failure shape plus target, never just "tool". At the threshold the model
+receives one observation:
+
+```text
+[runtime-observation circuit-open]
+observed: "read" failed 2 times with the same failure on c:\repo\gone.mjs (threshold 2).
+failure: Error: cannot read "<str>": not found
+fact: capabilities.read.state = "stalled" (authority: runtime, revision: 1, fingerprint: ...)
+```
+
+It reports an observation and gives no order. It also does **not** reject: for filesystem tools,
+read, write and edit are each other's remedy, and a rejection would deadlock the session.
 
 ### Reconcile
 
-When the execution result and the real-world state may disagree:
+A non-atomic action that already ran once must not be replayed.
 
-> **Confirm reality first, then decide the next step.**
+```js
+registerNonAtomicContract({ id: "deploy", match: { tool: "pwsh", pattern: /deploy\.ps1/ } })
+```
 
-For example: the tool returned a failure, but the external state already changed — so do not simply re-execute.
+The second call is blocked with: "was already invoked once and its confirmation was lost; the
+effect may already be applied, so a retry can duplicate the side effect."
 
 ### Delta
 
 Tell the model only when a change worth noticing actually appears.
 
-Runtime does not need to keep announcing "still the same as before".
+```js
+{ role: "user",
+  source: { kind: "plugin", plugin: "dsh-runtime-seam" },
+  content: [{ type: "text", text: "[runtime-observation ...]" }] }
+```
+
+The change enters the next step as one user-role message. Runtime does not keep announcing
+"still the same as before".
 
 ### Child orchestration
 
-Background children are how a parent agent delegates work. The runtime already knows *what
-happened* — a child started, settled, and released its ownership — so the orchestrator never has
-to ask.
+A parent delegates to background children; the orchestrator waits on the **terminal fact**,
+never on a status.
 
-```text
-spawn  ->  wait  ->  query the child's own trajectory  ->  the model decides what it means
+```js
+const fact = await ctx.childOrchestration.wait(childId, 30000)
+// { outcome: "settled", stopReason: "completed", lastAssistantMessage: "..." }
 ```
 
-- **wait** consumes the terminal fact (`subagent/end`), never a status: `idle` is not "finished",
-  and a child that is quiescent while it still owns a live child is *waiting*, not done.
-- **query** re-reads what actually happened from the child's own durable session, after it settled.
-- the model never polls, never sees the runtime's private residency state, and is never handed a
-  made-up "result": what a child produced is a judgement, not a fact the harness can own.
-
-Ships as `ctx.childOrchestration` (`wait` / `waitAll` / `residency`) in `dsh-runtime-orchestration`.
-Semantics are frozen in
+`idle` is not "finished": a child that is quiescent while it still owns a live child is waiting,
+not done. In measurement that wait never returned early across the 30.5 seconds the child looked
+stopped. Semantics are frozen in
 [`docs/20-child-orchestration-semantic-contract.md`](docs/20-child-orchestration-semantic-contract.md)
 and measured in [`experiments/async-lifecycle/`](experiments/async-lifecycle/).
 
 ### Continuation (Pre)
 
-When the facts and a declared contract compress the next step to exactly one deterministic action, the Runtime executes it directly — through the normal permission / guard / cancellation boundary — and the model only digests what already happened.
+When the facts and a declared contract compress the next step to exactly one deterministic action,
+the Runtime executes it and the model only digests the outcome.
 
-When it is not certain, it never takes over. The engine is productized inside `dsh-runtime-seam`
-(driven by the `continuation` settings bit) with the first daily contract, `post-write-syntax-check`:
-after the model writes/edits workspace JS modules, the runtime runs `node --check` on them and
-hands the model one digest. See [`docs/status/pre-productized-2026-09-03.md`](docs/status/pre-productized-2026-09-03.md).
+The first daily contract is `post-write-syntax-check`: after the model writes or edits workspace JS
+modules, the runtime runs `node --check` itself and hands the model one digest:
+
+```text
+[runtime-continuation] deterministic step already executed by the runtime: post-write-syntax-check.
+Do not re-run it; digest the outcome and continue from the current world state.
+```
+
+It goes through the normal tool pipeline (permission, guard, cancellation), so what the model sees
+is a result that already happened, not a request. When it is not certain, it never takes over.
+Driven by the `continuation` settings bit; see
+[`docs/status/pre-productized-2026-09-03.md`](docs/status/pre-productized-2026-09-03.md).
 
 ---
 
@@ -304,6 +327,12 @@ Closer to the truth:
 > **Where the model can see clearly, it stays quiet; where the model cannot see reality, it adds a bit of certainty.**
 
 Full experiment process, raw data, and limitations: see [`docs/`](docs/) — in particular the Runtime Continuation line: [`docs/status/runtime-continuation-2026-09-02.md`](docs/status/runtime-continuation-2026-09-02.md) (proposition), [`runtime-continuation-boundaries-2026-09-02.md`](docs/status/runtime-continuation-boundaries-2026-09-02.md) (boundaries), [`runtime-continuation-instruction-2026-09-02.md`](docs/status/runtime-continuation-instruction-2026-09-02.md) (instruction continuity), [`runtime-continuation-ownership-2026-09-03.md`](docs/status/runtime-continuation-ownership-2026-09-03.md) (ownership boundary), and the four-round summary [`runtime-continuation-summary-2026-09-03.md`](docs/status/runtime-continuation-summary-2026-09-03.md).
+
+Three later lines have their own reports:
+
+* child orchestration — [`docs/20-child-orchestration-semantic-contract.md`](docs/20-child-orchestration-semantic-contract.md) (frozen semantics, including the 30.5-second negative case that disqualified `idle` as a terminal predicate)
+* turn stopping — [`docs/status/turn-stopping-continuation-and-cost-2026-09-11.md`](docs/status/turn-stopping-continuation-and-cost-2026-09-11.md) (is the checkpoint a legal continuation point, and what does injecting there cost), with the mechanism written up in [`docs/21-turn-continuation-and-injection.md`](docs/21-turn-continuation-and-injection.md)
+* the circuit's filesystem false positives — [`docs/status/circuit-fingerprint-vs-fs-errors-2026-09-11.md`](docs/status/circuit-fingerprint-vs-fs-errors-2026-09-11.md) (two different files collapsed into one fingerprint, and the fix)
 
 ---
 
