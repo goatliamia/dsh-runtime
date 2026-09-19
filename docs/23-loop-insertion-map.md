@@ -1,9 +1,10 @@
 # 往 Agent 循环里插东西：一份插点清单
 
-- 状态：**inventory**（2026-09-13）
-- 对象：DSH `0.1.5-rc.2` 的 **ReAct 循环层**（`dsh-agent-loop`）+ 工具管线（`dsh-tools`）+ agent/session/subagent 事件
+- 状态：**inventory**（2026-09-13，行号已按 2026-09-16 的 `0.1.6-alpha.2` 复核）
+- 对象：DSH 的 **ReAct 循环层**（`dsh-agent-loop`）+ 工具管线（`dsh-tools`）+ agent/session/subagent 事件
 - 目的：把"我们在哪些点插过东西、插完之后循环变成什么样、拿到了什么"一次说清
-- 证据：本仓各 `docs/status/*` 与 `experiments/async-lifecycle/*`；行号对 `0.1.5-rc.2`
+- 证据：本仓各 `docs/status/*` 与 `experiments/async-lifecycle/*`
+- 行号版本：下列为 **`0.1.6-alpha.2`** 实测。相对 `0.1.5-rc.2`：循环层整体 **−2 行**（逻辑未变），工具管线整体下移约 2000 行（文件变长），工具集与事件集**无变化**
 
 ---
 
@@ -13,17 +14,17 @@
 
 | 行 | 事件 | 派发模式 | 能改变什么 |
 |---|---|---|---|
-| 107 | `agent/inbox/claimed` | emit | 只观察：这一步认领了哪些消息 |
-| 207/208 | `agent/inbox/discarded` / `inserted` | emit | 只观察：队列进出 |
-| 781 | `agent/status` | emit | 只观察：`idle` / `running` 切换 |
-| 863 | `agent/error` | emit | 只观察 |
-| **894** | **`agent/pre-step`** | **waterfall** | **能改这一步的消息**（`{kind:'enter', messages}`），也能 `reject` |
-| **967** | **`agent/turn-stopping`** | **serial** | **收尾前的唯一检查点**；无 veto，只能"加东西让它继续"或抛错 |
-| 1032 | `agent/assistant-stream` | emit | 只观察：流式帧 |
-| 1088 | `agent/request-error` | waterfall | 能改请求失败的处置（**我们没用**） |
-| 1143 | `agent/request` | waterfall | 能改发给模型的请求（**我们没用**） |
+| 106 | `agent/inbox/claimed` | emit | 只观察：这一步认领了哪些消息 |
+| 205/206 | `agent/inbox/discarded` / `inserted` | emit | 只观察：队列进出 |
+| 779 | `agent/status` | emit | 只观察：`idle` / `running` 切换 |
+| 861 | `agent/error` | emit | 只观察 |
+| **892** | **`agent/pre-step`** | **waterfall** | **能改这一步的消息**（`{kind:'enter', messages}`），也能 `reject` |
+| **965** | **`agent/turn-stopping`** | **serial** | **收尾前的唯一检查点**；无 veto，只能"加东西让它继续"或抛错 |
+| 1030 | `agent/assistant-stream` | emit | 只观察：流式帧 |
+| 1086 | `agent/request-error` | waterfall | 能改请求失败的处置（**我们没用**） |
+| 1141 | `agent/request` | waterfall | 能改发给模型的请求（**我们没用**） |
 
-循环出口只有两个（`:945` / `:973`），都与步数无关；**平台没有轮次预算**，上游 README `:200` 明写。
+循环出口只有两个（`:943` / `:971`），都与步数无关；**平台没有轮次预算**，上游 README `:200` 明写。
 
 ### 1.2 工具管线（`dsh-tools/lib/index.js`）
 
@@ -31,11 +32,11 @@
 
 | 行 | 挂点 | 模式 | 能改变什么 |
 |---|---|---|---|
-| 197/198、513、870 | `tools.guard()` | 注册式（非事件） | 执行前拒绝，返回一句 reason |
-| 861 | `tools/pre-execute` | waterfall | 改/拦这次调用 |
-| 958 | `tools/execute` | waterfall | 换掉执行体 |
-| 1120 | `tools/post-execute` | waterfall | 改结果（**我们没用**） |
-| 1047 | `tools/result` | emit | 只观察：结算后的结果 |
+| 2919、2926、2646 | `tools.guard()` | 注册式（非事件） | 执行前拒绝，返回一句 reason |
+| 2910 | `tools/pre-execute` | waterfall | 改/拦这次调用 |
+| 3326 | `tools/execute` | waterfall | 换掉执行体 |
+| 3480 | `tools/post-execute` | waterfall | 改结果（**我们没用**） |
+| 3401 | `tools/result` | emit | 只观察：结算后的结果 |
 
 ### 1.3 外围事件（我们大量使用）
 
